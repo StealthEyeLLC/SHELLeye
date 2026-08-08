@@ -321,3 +321,11 @@ Rejected. Minimal engineering diagnostics are enough; ChatGPT is the operator.
 ## Change rule
 
 A frozen decision may change only when implementation/platform evidence demonstrates a materially stronger architecture. When it changes, update the relevant canonical document and this file together.
+
+### D-031 — Persistent jobs use a workload-held native lifetime anchor
+
+**Status: adopted from Build 001 live evidence.**
+
+On STEALTHEYELLC, live assigned processes alone did not preserve reopenability of the named Job Object after the kernel's last handle closed. Build 001 therefore duplicates one non-inheritable Job Object handle into the root workload process immediately after creation-time job assignment. This root-held handle is a native lifetime anchor only; it is not a broker, policy layer, ledger, or controller. The kernel can hard-die, the workload remains alive, and a restarted kernel can reopen the same named Job Object.
+
+This changes one native implementation assumption from the frozen baseline but does not change the `job_*` concept/lifetime model.

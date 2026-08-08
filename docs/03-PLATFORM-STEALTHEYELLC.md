@@ -291,3 +291,21 @@ On 2026-08-08 the final synthesis pass re-verified Windows 11 24H2 build 26100.8
 Before Build 001 claims measured completion, re-query the exact runtime/toolchain/OS state used by the implementation and update this document if it materially differs.
 
 The machine is concurrent reality; this file is a canonical baseline, not a claim that software versions can never change.
+
+## Build 001 measured runtime
+
+Build 001 implementation runtime:
+
+- canonical clone: `X:\SHELLeye\repo`
+- kernel publish: `C:\SHELLeye\runtime\kernel\app`
+- state database: `C:\SHELLeye\state\shelleye-dev.db`
+- spool root: `C:\SHELLeye\spool`
+- temporary acceptance root: `C:\SHELLeye\Temp`
+- named pipe: `shelleye-dev`
+- scheduled task: `shelleye-kernel-dev`
+- principal: `STEALTHEYELLC\StealthEye`, interactive, highest available privileges
+- .NET SDK used: 10.0.302
+- Node Program Host/runtime: 24.18.1
+- PowerShell provider: in-kernel `Microsoft.PowerShell.SDK` 7.6.4
+- C: exact gap-continuity provider: NTFS journal ID + per-file USN
+- X: ReFS: current physical identity only; no Build 001 exact post-gap continuity claim

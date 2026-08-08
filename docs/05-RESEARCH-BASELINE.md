@@ -554,3 +554,9 @@ These are deliberately **not** blockers to canonicalization:
 ## 24. Speculation not used as design basis
 
 Possible future directions such as a kernel driver, WFP/minifilter integration, universal object-manager handle graph, always-on ETW ingestion, or persistent broker holding arbitrary native handles are **speculation** until a measured high-value capability cannot be obtained cleanly through supported user-mode APIs.
+
+## Build 001 live implementation evidence
+
+The implementation pass converted the frozen research baseline into live Windows measurements. One platform assumption changed: a named Job Object with live assigned members was not reopenable after the creator/kernel's last handle closed on STEALTHEYELLC. A standalone cross-process probe reproduced this. Keeping a non-inheritable duplicate Job Object handle in the root workload process made cross-process reopen succeed and made Milestone A hard-kill recovery pass repeatedly.
+
+Other live defects were implementation-level rather than architecture-level: owner-module TCP table row alignment, native rename buffer termination/delete access, directory path-binding reconciliation, elevated named-pipe ACL reachability from the same owner session, and JavaScript precision loss when 64-bit FILETIME witnesses were reconstructed numerically. Each received a permanent regression or opaque-token/provider fix.

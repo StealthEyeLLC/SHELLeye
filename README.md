@@ -1,6 +1,6 @@
 # SHELLeye
 
-Status: **FINAL / SYNTHESIZED / VERIFIED / FROZEN FOR BUILD 001 — product implementation has not begun**
+Status: **BUILD 001 IMPLEMENTED / MEASURED / COMPLETE — Machine World Kernel Slice**
 Owner: **StealthEyeLLC**  
 Primary operator: **ChatGPT**  
 Initial target: **STEALTHEYELLC / Windows 11 x64**  
@@ -57,7 +57,7 @@ Build 001 is Windows-first:
 
 ## Build 001 — Machine World Kernel Slice
 
-Build 001 is the first product implementation and is **not part of this repository-setup pass**.
+Build 001 is the first completed product implementation. Its four canonical gates passed on STEALTHEYELLC; measured evidence is recorded in [`docs/09-BUILD-001-RESULTS.md`](docs/09-BUILD-001-RESULTS.md).
 
 It has four hard gates:
 

@@ -144,3 +144,9 @@ Only reconsider after measured evidence:
 - persistent native broker solely to keep arbitrary handles alive.
 
 Each must earn itself through a capability impossible or materially weaker through supported user-mode interfaces.
+
+## Build 001 completion status
+
+**Build 001 — Machine World Kernel Slice: COMPLETE / MEASURED (2026-08-08).**
+
+Milestones A, B, C, and D all passed their canonical gates. Build 002 has not begun. Future sequencing remains evidence-driven from the measured Build 001 substrate.

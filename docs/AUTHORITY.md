@@ -100,15 +100,18 @@ This rule applies especially to:
 
 ## Build status authority
 
-At the end of the final synthesis/freeze pass:
+After the subsequent owner-authorized Build 001 implementation pass:
 
 ```text
-architecture: FINAL / SYNTHESIZED / VERIFIED / FROZEN FOR BUILD 001
+architecture: BUILD 001 IMPLEMENTED / MEASURED; canonical architecture retained with D-031 live-evidence amendment
 repository: canonical / coherent / main only
-Build 001 issues #1-#5: OPEN / PLANNED
+Build 001 issues #1-#5: COMPLETE / READY TO CLOSE
 duplicate issue #6: CLOSED AS DUPLICATE OF #5
-product implementation: NOT STARTED
-Build 001 acceptance: NOT RUN
+product implementation: BUILD 001 COMPLETE
+Build 001 acceptance: A-D PASSED / MEASURED
 ```
 
-Do not create `09-BUILD-001-RESULTS.md` or mark milestone issues complete until the implementation tab has executed and measured the gates.
+That condition has now been satisfied: `docs/09-BUILD-001-RESULTS.md` was created only after Milestones A-D passed their measured gates.
+## Subsequent implementation authority
+
+The repository-setup restriction above describes the completed architecture/setup pass. A subsequent explicit owner-authorized implementation pass on 2026-08-08 authorized Build 001 product implementation, testing, measured acceptance, documentation, commits, pushes, and issue completion. `docs/09-BUILD-001-RESULTS.md` is the measured authority for that implementation outcome.

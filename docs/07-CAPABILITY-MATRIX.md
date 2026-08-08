@@ -103,3 +103,9 @@ raw execution escape hatch
 ```
 
 If this slice cannot pass the hostile identity/recovery gates, adding more providers is not progress.
+
+## Build 001 measured implementation outcome
+
+All capabilities classified **Build 001 core** and exercised by the A–D slice are now implemented and measured on STEALTHEYELLC, including machine/BootEpoch/session/volume concepts; exact process identity/actuation/waits; persistent Job Object workload grouping and recovery; restart-independent spool cursors; service inspection; structured PowerShell objects; physical file/directory identity, guarded mutation, rename/hard-link/replacement handling, NTFS gap token, watchers/reconciliation; exact listener owner/bind witnesses; bounded world deltas/cursor expiration; `world.sync`; typed waits/errors; raw escape; and the disposable Node Program Host.
+
+Deferred/core-later/experimental capabilities remain deferred. X: ReFS exact post-gap continuity remains unsupported by Build 001.

@@ -1229,3 +1229,11 @@ SHELLeye succeeds when ChatGPT can retain a compact machine world, safely contin
 The strongest invariant is:
 
 > **Continuity is earned by native identity evidence. When evidence is insufficient, SHELLeye loses continuity rather than acting on the wrong machine object.**
+
+### Build 001 measured Job Object lifetime correction
+
+Live Build 001 execution on STEALTHEYELLC disproved one native lifetime assumption: after the kernel's last Job Object handle closed, `OpenJobObject` could not reopen the named job even while assigned member processes remained alive. An isolated cross-process probe reproduced the behavior.
+
+Build 001 therefore adds one narrow persistence primitive without changing `job_*` semantics: immediately after creation-time `PROC_THREAD_ATTRIBUTE_JOB_LIST` assignment, SHELLeye duplicates the Job Object handle into the created root process with `DuplicateHandle(..., bInheritHandle = FALSE, DUPLICATE_SAME_ACCESS)`. The workload does not use this handle; its handle table simply keeps the native named object reopenable while the workload root remains alive. The kernel may die and later reopen the same named Job Object. The duplicate is non-inheritable and closes naturally when the root exits. There is no separate handle broker and no controller-owned workload lifetime.
+
+This is now part of the canonical persistent-job launch path on STEALTHEYELLC.

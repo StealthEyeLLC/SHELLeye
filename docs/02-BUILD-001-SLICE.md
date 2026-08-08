@@ -860,3 +860,16 @@ Recommended order:
 13. benchmark and measured results document.
 
 Do not postpone Milestone C hostile identity tests until after feature breadth.
+
+## Build 001 measured implementation amendment
+
+The A/D persistent-workload launch path includes one additional required step proven necessary on STEALTHEYELLC:
+
+```text
+creation-time job assignment
+→ exact child process handle returned
+→ DuplicateHandle(job → child process, non-inheritable)
+→ child-owned lifetime anchor keeps named Job Object reopenable across kernel death
+```
+
+Milestone A acceptance was executed with this anchor. Kernel death still removes every SHELLeye-kernel handle; the root workload process remains the native lifetime anchor until restart/reopen. This does not weaken creation-time assignment, selective inherited-stream handling, or the rule that Windows owns the workload lifetime.
