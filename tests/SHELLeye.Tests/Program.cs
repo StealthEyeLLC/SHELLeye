@@ -85,8 +85,31 @@ try{
     var result=new{suite="SHELLeye Build 001 hostile core",atUtc=DateTimeOffset.UtcNow,totalCanonicalCases=cases.Count,canonicalCases=cases,supplemental,metrics=new{falseProcessRebounds,falseFileRebounds,falseListenerRebounds,wrongProcessMutations,wrongFileMutations,falseRebounds=falseProcessRebounds+falseFileRebounds+falseListenerRebounds,wrongObjectMutations=wrongProcessMutations+wrongFileMutations,staleConservative},externalEvidenceRequired=new[]{22,23}};
     string outDir=@"C:\SHELLeye\Temp\results";Directory.CreateDirectory(outDir);string outPath=Path.Combine(outDir,"hostile-core.json");File.WriteAllText(outPath,JsonSerializer.Serialize(result,new JsonSerializerOptions(JsonDefaults.Options){WriteIndented=true}));Console.WriteLine(JsonSerializer.Serialize(result,JsonDefaults.Options));
 }
-finally{try{world.Dispose();}catch{}try{Directory.Delete(root,true);}catch{}}
+finally
+{
+    world.Dispose();
+    DeleteTreeWithRetry(root);
+}
 
+void DeleteTreeWithRetry(string path)
+{
+    Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+    Exception? last = null;
+    for (int attempt = 0; attempt < 40; attempt++)
+    {
+        try
+        {
+            if (Directory.Exists(path)) Directory.Delete(path, true);
+            return;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            last = e;
+            Thread.Sleep(50);
+        }
+    }
+    throw new Exception($"Failed to clean hostile workspace {path}", last);
+}
 Process StartIdleNode(){var psi=new ProcessStartInfo(node){UseShellExecute=false,CreateNoWindow=true};psi.ArgumentList.Add("-e");psi.ArgumentList.Add("setInterval(()=>{},1000)");return Process.Start(psi)!;}
 Process StartFixture(string config,int port){var psi=new ProcessStartInfo(node){UseShellExecute=false,RedirectStandardOutput=true,RedirectStandardError=true,CreateNoWindow=true};psi.ArgumentList.Add(fixture);psi.ArgumentList.Add("--config");psi.ArgumentList.Add(config);psi.ArgumentList.Add("--port");psi.ArgumentList.Add(port.ToString());return Process.Start(psi)!;}
 (dynamic port,uint childPid) ReadReady(Process proc){string? line=proc.StandardOutput.ReadLine();if(line is null)throw new Exception("fixture produced no ready line: "+proc.StandardError.ReadToEnd());using var d=JsonDocument.Parse(line);var r=d.RootElement;return(r.GetProperty("port").GetInt32(),r.GetProperty("childPid").GetUInt32());}
