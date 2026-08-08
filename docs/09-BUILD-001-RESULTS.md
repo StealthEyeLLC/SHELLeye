@@ -7,11 +7,11 @@ Implementation commit: **bfc9e27325dc24eb890daaf88889a111ac060aa0**
 ## Implementation topology
 
 - Kernel: C# / .NET 10, Windows-targeted
-- State: SQLite WAL at C:\SHELLeye\state\shelleye-dev.db
-- IPC: local Windows named pipe shelleye-dev
-- Runtime: highest-privilege interactive-owner scheduled task shelleye-kernel-dev
+- State: SQLite WAL at `C:\SHELLeye\state\shelleye-dev.db`
+- IPC: local Windows named pipe `shelleye-dev`
+- Runtime: highest-privilege interactive-owner scheduled task `shelleye-kernel-dev`
 - Program Host: Node.js 24.18.1, disposable, one persistent pipe connection per invocation
-- PowerShell: in-kernel Microsoft.PowerShell.SDK 7.6.4 runspace, real PSObject projection before formatting
+- PowerShell: in-kernel `Microsoft.PowerShell.SDK` 7.6.4 runspace, real `PSObject` projection before formatting
 - Persistent output: per-process/per-stream restart-independent spool files with logical cursors
 
 ## Milestone A — Persistent Machine World
@@ -20,17 +20,19 @@ Implementation commit: **bfc9e27325dc24eb890daaf88889a111ac060aa0**
 
 - kernel PID before hard kill: **16936**
 - kernel PID after restart: **23628**
+- kernel epochs: **kernel_11 → kernel_12**
 - BootEpoch: **boot_1**; native BootId: **5**
 - logical job: **job_10**
-- native job: $(@{passed=True; completedUtc=2026-08-08T20:22:24.768Z; kernelPidBefore=16936; kernelPidAfter=23628; kernelEpochBefore=kernel_11; kernelEpochAfter=kernel_12; bootEpoch=boot_1; nativeBootId=5; jobId=job_10; nativeJobName=Local\SHELLeye.d83c733c-5d80-44c3-af92-8f088f5fe1ce.9d8c6d12489d4595a6cc451f6d5b9461; rootProcessId=proc_44; rootPid=24000; childProcessId=proc_47; childPid=23000; httpSurvived=True; rootAliveDuringGap=True; childAliveDuringGap=True; outputGapRecovered=True; outputAfterCursorBytes=111; fileId=file_11; fileIdentity=; fileContinuity=; listenerBefore=listener_11; listenerAfter=listener_12; oldListenerStateAfterGap=unknown; session=; volume=; service=; recoveryDeltaTypes=System.Object[]; worldCursorBefore=427; worldCursorAfter=447; sync=; cleanup=}.nativeJobName)
+- native job: `Local\SHELLeye.d83c733c-5d80-44c3-af92-8f088f5fe1ce.9d8c6d12489d4595a6cc451f6d5b9461`
 - root process: **proc_44** / PID **24000**
 - child process: **proc_47** / PID **23000**
-- root alive while kernel count was zero: **True**
-- child alive while kernel count was zero: **True**
-- HTTP survived kernel death: **True**
-- output recovered after the pre-kill cursor: **True**, **111 bytes**
-- physical file: **file_11**; journal **0x01dd1a7cac101e02**; last USN **1389456384**
+- root alive while kernel count was zero: **true**
+- child alive while kernel count was zero: **true**
+- HTTP survived kernel death: **true**
+- output recovered after the pre-kill cursor: **true**, **111 bytes**
+- physical file: **file_11**; FILE_ID_128 `6835010000000b000000000000000000`; journal `0x01dd1a7cac101e02`; last USN `1389456384`
 - listener continuity remained conservative: **listener_11 → listener_12**; old listener state **unknown**
+- recovery delta families: `job.created`, `job.member_added`, `process.started`, `listener.opened`, `file.changed`, `listener.closed`, `world.reconciled`
 
 The initial live A attempt exposed the native named-job reopen defect. D-031 (non-inheritable workload-held duplicated Job Object handle) fixed it; the final hard-kill run passed on the corrected architecture.
 
@@ -38,13 +40,15 @@ The initial live A attempt exposed the native named-job reopen defect. D-031 (no
 
 **PASS.** Demonstrated typed concepts: machine, session, volume, directory, physical file, job, exact root/child processes, listener, service, and command. Process→session, job→members, child→parent with evidence quality, listener→exact process, service→current process, and file→volume relations were all exercised.
 
-Final run emitted **19** scoped deltas from the acceptance cursor with event families: $([string]::Join(', ',@{passed=True; completedUtc=2026-08-08T20:22:34.925Z; concepts=; relationships=; waits=; delta=; output=; sync=; payloadDiscipline=; cleanup=}.delta.types)). Real file and exact process waits passed; normal model-facing observations did not surface full process/service/TCP tables.
+Final run emitted **19** scoped deltas from the acceptance cursor with event families: `job.created`, `job.member_added`, `process.started`, `listener.opened`, `file.changed`, `process.exited`. Real file and exact process waits passed; normal model-facing observations did not surface full process/service/TCP tables.
+
+Final retained concepts included `job_11`, root `proc_48`, child `proc_51`, `file_12`, `listener_13`, and `svc_1`.
 
 ## Milestone C — Recovery Continuity / Identity Killer
 
 **PASS: 25 / 25 canonical cases.**
 
-`	ext
+```text
 false process rebounds = 0
 false file rebounds = 0
 false listener rebounds = 0
@@ -53,7 +57,7 @@ wrong file mutations = 0
 false rebounds = 0
 wrong-object mutations = 0
 conservative stale/destroyed outcomes observed = 3
-`
+```
 
 Supplemental regressions also proved bounded world-cursor expiration, current C: NTFS journal/USN continuity tokens, and X: ReFS physical identity without claiming NTFS-equivalent post-gap continuity.
 
@@ -61,14 +65,16 @@ Supplemental regressions also proved bounded world-cursor expiration, current C:
 
 **PASS.** One Program Host invocation used one persistent pipe connection and executed **52 typed SHELLeye operations** across machine/session/volume/file/process/job/network/service/PowerShell/world/raw/state domains with **0 model calls between primitives**.
 
+- job: **job_12**
 - first process: **proc_53**
-- replacement process: **proc_58**; new exact concept: **True**
+- replacement process: **proc_58**; new exact concept: **true**
+- file: **file_13**; same physical identity across rename: **true**
 - first listener: **listener_14**
-- replacement listener: **listener_15**; new concept: **True**
-- PowerShell engine: **7.6.4**; structured object proof: **True**; primary type **System.Diagnostics.Process**
-- same physical file identity across rename: **True**
+- replacement listener: **listener_15**; new concept: **true**
+- PowerShell engine: **7.6.4**; provider `Microsoft.PowerShell.SDK`; structured object proof: **true**; primary type `System.Diagnostics.Process`
+- service: `EventLog` / **svc_1** / current process `proc_16`
 - raw escape hatch exit code: **0**
-- final SQLite quick-check: **ok**
+- final SQLite quick-check: **ok** / journal mode **wal**
 
 ## Benchmark
 
@@ -89,10 +95,14 @@ This benchmark is illustrative, not a general throughput claim: the shell side i
 1. Named Job Object reopenability did not survive loss of the creator's last handle on the target despite live assigned members; fixed by D-031 workload-held non-inheritable duplicate handle.
 2. Highest-privilege kernel pipe default ACL rejected the owner's medium-integrity Program Host; fixed with an explicit native same-owner/System pipe ACL.
 3. IP Helper owner-module TCP rows require native alignment after the count field; corrected listener parsing and verified bind timestamps/owners.
-4. Handle-based rename required DELETE access and a NUL-terminated FILE_RENAME_INFO filename buffer; corrected without falling back to pathname mutation.
+4. Handle-based rename required DELETE access and a NUL-terminated `FILE_RENAME_INFO` filename buffer; corrected without falling back to pathname mutation.
 5. Directory rename required physical-child path-binding reconciliation; stale namespace bindings are now removed when the same file ID appears at the moved path.
-6. JavaScript cannot round-trip 64-bit FILETIME revisions safely as numbers; file inspection now returns opaque exact evisionToken and identityToken strings for preconditions/correlation.
-7. Immediate process creation can precede appearance in SystemBasicProcessInformation; exact retain now waits a bounded interval while the created native handle remains authoritative.
+6. JavaScript cannot round-trip 64-bit FILETIME revisions safely as numbers; file inspection now returns opaque exact `revisionToken` and `identityToken` strings for preconditions/correlation.
+7. Immediate process creation can precede appearance in `SystemBasicProcessInformation`; exact retain now waits a bounded interval while the created native handle remains authoritative.
+
+## Architecture outcome
+
+One frozen native implementation assumption was invalidated by Build 001: live job members alone did not preserve named Job Object reopenability after the kernel's last handle closed on STEALTHEYELLC. D-031 corrects that with a workload-held native lifetime anchor. No SHELLeye concept-lifetime decision, identity rule, or milestone semantic was invalidated.
 
 ## Remaining deferred capabilities
 
