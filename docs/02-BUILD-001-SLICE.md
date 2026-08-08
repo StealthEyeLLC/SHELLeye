@@ -1,6 +1,6 @@
 # 02 — Build 001: Machine World Kernel Slice
 
-Status: **PLANNED — NOT IMPLEMENTED**  
+Status: **FINAL SPEC / FROZEN FOR BUILD 001 — PLANNED / NOT IMPLEMENTED**
 Priority: **P0 — prove the machine-world spine before breadth**  
 Target: **STEALTHEYELLC / Windows 11 build 26100.8973**
 
@@ -32,7 +32,7 @@ These four gates define Build 001 complete. Do not create `09-BUILD-001-RESULTS.
 
 ### Permanent vertical slice
 
-Every Build 001 component must contribute to A–D. Do not add broad ETW ingestion, USN infrastructure, full Task Scheduler mutation, ConPTY, WSL execution, registry ontology, remote machines, Linux/macOS providers, cloud orchestration, or universal handle graphs merely for completeness.
+Every Build 001 component must contribute to A–D. Do not add broad ETW ingestion, full USN journal ingestion/replay, full Task Scheduler mutation, ConPTY, WSL execution, registry ontology, remote machines, Linux/macOS providers, cloud orchestration, or universal handle graphs merely for completeness.
 
 ### Identity before breadth
 
@@ -145,7 +145,7 @@ C:\SHELLeye\Temp
 
 The canonical repository clone can use `X:`; the deterministic physical-file fixture should primarily use `C:` NTFS because Build 001 must establish exact physical-file identity there. ReFS identity gets a targeted smoke case rather than driving the entire slice.
 
-For initial persistent development launch, use an interactive-user scheduled task such as `shelleye-kernel-dev` under `STEALTHEYELLC\StealthEye`, matching the session in which the developer workload runs. This is a deployment choice for the first target, not a future privilege architecture. Multi-session/system-service execution is deferred until it buys a concrete capability.
+For initial persistent development launch, use an interactive-user scheduled task such as `shelleye-kernel-dev` under `STEALTHEYELLC\StealthEye`, matching the session in which the developer workload runs. Configure that Build 001 task to run with the highest privileges available to the owner account because the final NTFS continuity witness queries the volume USN journal identifier, which Windows documents as an administrator operation. This is an intrinsic OS access requirement, not a SHELLeye permission tier. This is a deployment choice for the first target, not a future privilege architecture. Multi-session/system-service execution is deferred until it buys a concrete capability.
 
 ## 6. Local protocol
 
@@ -193,10 +193,10 @@ delta_ring
 Key principles:
 
 - logical concept ID separate from native witness;
-- process witness includes BootEpoch, PID, sequence number, creation time;
-- file witness includes volume identity + 128-bit file ID;
+- process witness includes BootEpoch, PID, sequence number, creation time; BootEpoch prefers current `ProcessTelemetryIdInformation.BootId` when available and is corroborated/fallbacked by persisted Windows last-boot evidence;
+- file witness includes volume identity + 128-bit file ID; exact C: NTFS post-gap continuity additionally stores USN journal ID + per-file last USN;
 - named job native name persisted;
-- listener binds to exact owner process incarnation;
+- listener binds to exact owner process incarnation + TCP bind/create timestamp where IP Helper exposes it;
 - deltas are bounded and pruneable;
 - completed short-lived commands are garbage-collectable;
 - no permanent command/action ledger.
@@ -208,6 +208,7 @@ Build 001 must implement:
 - process enumeration using `SystemBasicProcessInformation` on this target;
 - PID, image, sequence number, reported parent PID;
 - exact process open/verification with creation time;
+- optional target-specific handle-bound corroboration through `ProcessTelemetryIdInformation` when available;
 - process state/exit code where accessible;
 - session ID;
 - executable path where accessible;
@@ -223,6 +224,22 @@ Optional rich fields such as all modules/threads/handles are not required for A�
 
 Every operation through `proc_*` must resolve the current exact incarnation before acting. Stored PID alone is never accepted as actuation authority.
 
+Required retained-process mutation path:
+
+```text
+retained BootEpoch/PID/SequenceNumber/creation witness
+→ OpenProcess(retained PID, required rights)
+→ GetProcessTimes on that handle must match retained creation time
+→ while the same handle is held, verify retained SequenceNumber:
+     ProcessTelemetryIdInformation if supported, otherwise/further corroborated by
+     a fresh SystemBasicProcessInformation row for that PID
+→ mismatch/absence/exit/access failure => typed conservative result
+→ mutate/wait using that same opened process handle
+```
+
+The same-handle rule closes the enumeration/open/mutation race: even if the original exits and Windows later reuses its PID, an already-open process handle remains bound to the original process object and cannot redirect to the replacement.
+
+Hard assertion: `terminate(old_proc)` can never terminate a process that later reused the old PID.
 ## 9. Execution / Job Object provider
 
 Build 001 persistent workload path:
@@ -230,15 +247,17 @@ Build 001 persistent workload path:
 1. create uniquely named Windows Job Object;
 2. persist native job name + `job_*` concept before/around launch transaction;
 3. do **not** enable `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`;
-4. create initial workload process suspended;
-5. assign process to Job Object;
-6. configure stdout/stderr to restart-independent spool files;
-7. resume process;
-8. retain exact `proc_*` witness;
-9. associate completion port for low-latency membership/exit/empty signals;
-10. reconcile with job/process queries because notifications are not guaranteed.
+4. associate the Job Object completion port while the job is still inactive;
+5. create/open restart-independent stdout/stderr spool-segment handles with append semantics;
+6. build `STARTUPINFOEX` with `PROC_THREAD_ATTRIBUTE_JOB_LIST` so the fixture is assigned to the intended job as part of `CreateProcessW` on this Windows 11 target;
+7. use `PROC_THREAD_ATTRIBUTE_HANDLE_LIST` so the child inherits only the required stdout/stderr/stdin handles;
+8. call `CreateProcessW` with `EXTENDED_STARTUPINFO_PRESENT` and retain the returned exact process/thread handles;
+9. retain the exact `proc_*` witness;
+10. reconcile completion-port signals with job/process queries because most job notifications are not guaranteed.
 
-Do not force unrelated external processes into SHELLeye jobs.
+`CREATE_SUSPENDED → AssignProcessToJobObject → ResumeThread` remains a compatibility fallback when creation-time `PROC_THREAD_ATTRIBUTE_JOB_LIST` is unavailable/incompatible. It is not the preferred Build 001 path on STEALTHEYELLC.
+
+Do not force unrelated or incompatible external processes into SHELLeye jobs. Native nested-job/breakaway/assignment constraints are returned as OS facts.
 
 Required operations:
 
@@ -255,29 +274,39 @@ job.output(afterCursor)
 ```
 
 Exact public names can change; semantics cannot.
-
 ## 10. Restart-safe output
 
 Persistent workload stdout/stderr must remain operational across kernel death.
 
-Build 001 default:
+Build 001 default is one restart-independent spool **segment per process/stream**, for example:
 
 ```text
-job stdout → C:\SHELLeye\spool\<job-id>.stdout
-job stderr → C:\SHELLeye\spool\<job-id>.stderr
+C:\SHELLeye\spool\<job-id>\<proc-id>.stdout
+C:\SHELLeye\spool\<job-id>\<proc-id>.stderr
 ```
 
-Use machine-controlled file handles/append semantics appropriate to the fixture. Kernel reads by byte cursor and exposes bounded chunks.
+Launch requirements:
+
+- open the stream handles before `CreateProcessW` with append/write semantics appropriate to the fixture;
+- mark only required stream handles inheritable;
+- pass them through `STARTF_USESTDHANDLES` plus `PROC_THREAD_ATTRIBUTE_HANDLE_LIST`;
+- the child owns its inherited write handle independently of kernel lifetime.
+
+Kernel reads by segment/byte cursor and exposes bounded chunks through the logical job output cursor.
 
 Acceptance requirements:
 
 - kill kernel while workload continues;
-- workload must not die due to broken output pipe;
-- after kernel restart, old output cursor remains usable if still retained;
+- workload must not die due to a broken kernel-owned pipe;
+- after kernel restart, old logical output cursor remains usable if its segments are still retained;
 - new output produced during the gap is readable;
-- large output is bounded/rotatable;
-- spool cleanup occurs after the operational retention period rather than becoming permanent history.
+- model-facing output chunks are bounded;
+- deterministic fixture output is bounded;
+- completed segments are garbage-collected after the operational retention window.
 
+Transparent live rotation of a spool file that a running child already holds open is **not** required in Build 001. A later stream sink can earn that complexity if sustained high-volume workloads require active rotation. Do not falsely claim path rename/rotation redirects an existing child file handle.
+
+This is kernel-restart continuity, not a permanent log or machine-power-loss durability system.
 ## 11. File provider
 
 Build 001 required:
@@ -285,11 +314,14 @@ Build 001 required:
 - normalized path binding;
 - volume identity;
 - `FILE_ID_INFO` / 128-bit file ID;
+- explicit recognition that file IDs can be reused over time after deletion;
 - file and directory concepts;
 - current existence/type/size/time metadata;
 - content hash only when required for a revision/precondition;
 - create/read/write/rename/move/delete for disposable fixture files;
 - mutation precondition on current physical identity;
+- **same-handle verify-and-mutate:** query physical identity/revision on the handle that will perform `WriteFile`, `SetFileInformationByHandle`, or another handle-based mutation;
+- `OpenFileById` where it materially reduces namespace races and is supported;
 - `ReadDirectoryChangesW` or equivalent watcher dirty signals;
 - overflow/gap reconciliation;
 - same-volume rename continuity;
@@ -297,8 +329,28 @@ Build 001 required:
 - delete/recreate detection;
 - directory rename continuity.
 
-USN is explicitly not required.
+### Narrow NTFS post-gap continuity witness
 
+`FILE_ID_INFO` alone cannot prove post-gap continuity because Windows explicitly permits file-ID reuse over time. Milestone A therefore adds one narrow NTFS continuity token for its retained `C:` fixture file:
+
+```text
+volume identity
+128-bit FileId
+USN journal ID
+last file/directory USN from FSCTL_READ_FILE_USN_DATA
+```
+
+Before kernel death, persist this token. After restart, continue the same `file_*` only if volume/FileId, journal ID, and last USN all still match. A reset/deleted journal, changed file USN, inaccessible query, or any mismatch means exact continuity is not proved; return stale/ambiguous/destroyed as evidence permits rather than rebinding.
+
+This does **not** implement full USN-journal ingestion or event replay. Build 001 does not scan the volume journal or reconstruct missed file history. The `X:` ReFS test remains a current-identity smoke case while its journal is inactive.
+
+Required primary API families:
+
+- `GetFileInformationByHandleEx(FileIdInfo)`;
+- `OpenFileById` where appropriate;
+- `SetFileInformationByHandle` for handle-based rename/delete/metadata/end-of-file operations;
+- `FSCTL_READ_FILE_USN_DATA` for the retained file token;
+- `FSCTL_QUERY_USN_JOURNAL` for the C: journal identifier.
 ## 12. Volume provider
 
 Build 001 minimum:
@@ -331,16 +383,17 @@ Acceptance uses an existing harmless service such as the running Task Scheduler/
 Build 001 required:
 
 - IPv4 and IPv6 TCP listener query via IP Helper;
-- owning PID;
+- prefer `TCP_TABLE_OWNER_MODULE_LISTENER` so rows include owning PID plus `liCreateTimestamp` where available;
 - exact owner `proc_*` resolution;
-- transient `listener_*` concept promotion for watched fixture server;
+- transient `listener_*` concept promotion for watched fixture server using endpoint + exact process + bind/create timestamp + observation generation;
 - targeted wait for listener open/close;
 - port-reuse identity test.
+
+The bind/create timestamp is an additional listener-incarnation witness, not a documented globally unique socket ID. Across an unobserved kernel gap, current endpoint state may be reconstructed but uninterrupted socket continuity is not asserted solely from matching endpoint/PID/timestamp values.
 
 Connection-table breadth is optional. UDP is core-later unless trivial after TCP implementation.
 
 No durable `port_*` concept.
-
 ## 15. Session provider
 
 Build 001 minimum:
@@ -461,8 +514,9 @@ Required cases:
 6. relaunch same executable → new `proc_B`;
 7. old `proc_A` remains terminal/destroyed and never rebounds;
 8. run deterministic resolver test simulating a current process table row with old PID but a different sequence number/creation time;
-9. `terminate(proc_A)` returns destroyed/stale and does not call termination on the simulated/new target;
-10. attempt real PID reuse opportunistically if practical, but deterministic simulation is the acceptance source so the suite is not probabilistic.
+9. run deterministic race test where the original exits around OpenProcess/verification; prove the held native handle cannot redirect to a reused PID;
+10. `terminate(proc_A)` returns destroyed/stale and does not call termination on the simulated/new target;
+11. attempt real PID reuse opportunistically if practical, but deterministic simulation is the acceptance source so the suite is not probabilistic.
 
 Hard assertion:
 
@@ -483,8 +537,9 @@ Required cases on NTFS:
 6. atomic replace `beta.txt` with a different file object → old `file_A` destroyed/replaced, new `file_B`;
 7. attempt `write(file_A)` → must not write `file_B`;
 8. delete file and recreate identical path/content → new `file_C`;
-9. old handle remains destroyed;
-10. targeted ReFS file identity smoke test on `X:`.
+9. inject/simulate a reused file-ID candidate with a changed journal/file-USN continuity token and prove the old `file_*` does not rebound;
+10. old handle remains destroyed;
+11. targeted ReFS file identity smoke test on `X:` without claiming NTFS-equivalent gap continuity while X: has no active journal.
 
 Hard assertion:
 
@@ -498,10 +553,10 @@ false file rebound count == 0
 Required cases:
 
 1. server A binds loopback ephemeral port P;
-2. retain `listener_A` bound to exact `proc_A`;
+2. retain `listener_A` bound to exact `proc_A` and its IP Helper bind/create timestamp;
 3. stop A and wait for listener closed;
 4. start server B so it binds P (explicitly or by controlled fixture retry);
-5. resolve owner to exact `proc_B`;
+5. resolve owner to exact `proc_B` and observe the new listener bind/create timestamp;
 6. allocate `listener_B`;
 7. old `listener_A` remains closed/destroyed;
 8. no operation/query through old handle silently returns B as the same listener.
@@ -516,10 +571,10 @@ false listener rebound count == 0
 
 ### Setup
 
-1. Start kernel in the intended interactive-user session.
-2. Create disposable NTFS workspace and config `file_*`.
-3. Create named `job_*`.
-4. Start fixture under the job with restart-safe stdout/stderr spool.
+1. Start kernel in the intended interactive-user session, with the Build 001 scheduled task using the owner account's highest available privileges for the NTFS journal-ID continuity query.
+2. Create disposable C: NTFS workspace and config `file_*`; retain volume/FileId plus C: journal ID + last file USN continuity token.
+3. Create named `job_*`, associate completion port while inactive, and prepare explicit inherited spool handles.
+4. Start fixture through creation-time Job Object assignment (`PROC_THREAD_ATTRIBUTE_JOB_LIST`) with explicit inherited spool handles; use suspended/assign/resume only if the documented fallback path is required.
 5. Retain `job_*`, root/child `proc_*`, config `file_*`, and current listener observation.
 6. Record current world cursor and output cursor.
 
@@ -533,11 +588,11 @@ false listener rebound count == 0
 ### Recovery
 
 11. Restart kernel.
-12. Detect same BootEpoch.
+12. Detect the same BootEpoch using the current Windows BootId when available plus persisted last-boot evidence; any uncertainty advances the logical epoch rather than rebinding transient objects.
 13. Reopen named Job Object.
 14. Recover **same logical `job_*`**.
 15. Enumerate process table and recover **same `proc_*`** for still-live parent/child using sequence number + creation-time witnesses.
-16. Resolve **same physical `file_*`** using volume + file ID.
+16. Recover **same physical `file_*`** only if volume + 128-bit file ID + persisted C: journal ID + last-file-USN continuity token all still match; otherwise report conservative loss of exact continuity.
 17. Resume job output from prior cursor and receive output produced during the gap.
 18. Reconcile service/session/listener current state.
 19. Emit recovery delta including any observation-gap uncertainty.
@@ -591,7 +646,8 @@ Run deterministic hostile cases across fresh and recovered kernels:
 4. deterministic PID-reuse resolver simulation;
 5. best-effort real PID reuse stress if practical;
 6. old-process terminate attempt;
-7. reported parent PID whose original parent no longer exists / could be reused.
+7. reported parent PID whose original parent no longer exists / could be reused;
+8. process exits after OpenProcess/verification but before mutation; the held handle must still prevent redirection to a reused PID.
 
 Expected:
 
@@ -612,7 +668,8 @@ uncertain parent PID        → reported/unknown relation, not false exact edge
 12. atomic replacement;
 13. delete/recreate same path;
 14. recreate same content;
-15. old-file write attempt.
+15. old-file write attempt;
+16. deterministic post-gap file-ID reuse simulation: same volume/FileId candidate but changed journal ID or file USN must not recover the old `file_*`.
 
 Expected:
 
@@ -622,6 +679,7 @@ same-volume rename → same file_*; path changes
 atomic replace     → old file_* destroyed/replaced; new file_*
 delete/recreate    → new file_*
 write(old file_*)  → never mutates replacement
+same FileId + changed continuity token → old file_* not recovered
 ```
 
 ### Listener
@@ -671,7 +729,7 @@ Canonical acceptance flow (minimum 30 meaningful SDK operations):
 6. retain/inspect config physical identity;
 7. establish world cursor;
 8. create named job;
-9. start fixture process suspended/assigned/resumed under job;
+9. start fixture through creation-time Job Object assignment (`PROC_THREAD_ATTRIBUTE_JOB_LIST`) with explicit inherited spool handles; use suspended/assign/resume only if the documented fallback path is required;
 10. retain exact root process;
 11. wait for ready output cursor;
 12. inspect job members;
@@ -769,7 +827,7 @@ Exclude unless a proven blocker requires one:
 - document/data semantics;
 - remote desktop;
 - full ETW ingestion;
-- USN-based recovery requirement;
+- broad USN journal ingestion/replay (the narrow C: journal-ID + per-file last-USN continuity token is Build 001 core);
 - generic handle graph;
 - full Registry ontology;
 - full Task Scheduler management;
@@ -787,7 +845,7 @@ Exclude unless a proven blocker requires one:
 
 Recommended order:
 
-1. protocol + operating-state DB + concept IDs + BootEpoch;
+1. protocol + operating-state DB + concept IDs + BootEpoch, using ProcessTelemetry BootId when available with last-boot fallback/corroboration;
 2. process enumeration/sequence witness + exact open/verify/wait/terminate;
 3. direct process creation + named Job Object + restart-safe spool;
 4. file/volume physical identity + guarded mutation;

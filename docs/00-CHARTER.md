@@ -1,6 +1,6 @@
 # 00 — Project Charter
 
-Status: **Canonical**  
+Status: **CANONICAL / FROZEN FOR BUILD 001**
 Project: **SHELLeye**  
 Owner: **StealthEyeLLC**  
 Primary operator: **ChatGPT**  

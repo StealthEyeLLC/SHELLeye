@@ -20,7 +20,7 @@ Required:
 - exact process identity and verified actuation;
 - named Job Object workload continuity;
 - restart-safe output cursors;
-- physical file/directory identity;
+- physical file/directory identity, same-handle guarded mutation, and the narrow C: NTFS journal-ID/file-USN continuity token required by Milestone A;
 - compact service/session/volume/listener relationships;
 - structured PowerShell object provider;
 - waits/deltas/world sync;
@@ -55,7 +55,7 @@ Goal: reduce polling and add high-value machine depth only where measured worklo
 Candidates:
 
 - selective ETW process/network providers;
-- optional USN journal recovery/scanning on volumes where active and useful;
+- full USN journal recovery/scanning on volumes where active and useful (beyond Build 001's narrow retained-file continuity token);
 - richer Task Scheduler registered-task/run model;
 - Registry concepts/change waits;
 - named-pipe discovery/promoted concepts;

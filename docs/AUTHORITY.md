@@ -1,6 +1,6 @@
 # SHELLeye Repository / Project Authority
 
-Status: **Canonical**  
+Status: **FINAL / SYNTHESIZED / VERIFIED / FROZEN FOR BUILD 001**
 Owner: **StealthEyeLLC**
 
 ## Owner authority
@@ -27,7 +27,7 @@ The repository already existed, so no repository-creation workaround was needed.
 
 ## Current authorization boundary
 
-The owner explicitly authorized this architecture/research/repository-setup pass.
+The owner explicitly authorized the architecture/research/repository-setup passes and this final synthesis/adversarial-verification/canonical-freeze pass.
 
 This pass may:
 
@@ -100,12 +100,13 @@ This rule applies especially to:
 
 ## Build status authority
 
-At the end of this setup pass:
+At the end of the final synthesis/freeze pass:
 
 ```text
-architecture: canonicalized
-repository: initialized/canonicalized
-Build 001 issues: created/planned
+architecture: FINAL / SYNTHESIZED / VERIFIED / FROZEN FOR BUILD 001
+repository: canonical / coherent / main only
+Build 001 issues #1-#5: OPEN / PLANNED
+duplicate issue #6: CLOSED AS DUPLICATE OF #5
 product implementation: NOT STARTED
 Build 001 acceptance: NOT RUN
 ```

@@ -1,6 +1,6 @@
 # 08 — Workflow Pressure Tests
 
-Status: **Canonical acceptance/architecture pressure tests**  
+Status: **FINAL / VERIFIED / FROZEN BUILD 001 acceptance pressure tests**
 Baseline: **2026-08-08**
 
 These workflows exist to attack the architecture before breadth is built. They are not demonstrations designed to make SHELLeye look good; they are cases that should expose false identity, hidden lifecycle coupling, event-gap assumptions, and text-shell fallback dependence.
@@ -14,10 +14,10 @@ Prove that a long-running workload and its meaningful machine concepts are not o
 ### Flow
 
 ```text
-create disposable NTFS workspace
+create disposable C: NTFS workspace
 → create config file_*
 → create named job_*
-→ start deterministic HTTP server proc_* under native Job Object
+→ start deterministic HTTP server proc_* through creation-time native Job Object assignment, with explicit inherited spool handles
 → server spawns child proc_*
 → capture output through restart-independent spool
 → wait for listener_*
@@ -30,8 +30,8 @@ create disposable NTFS workspace
 → detect same BootEpoch
 → reopen named native Job Object
 → recover same job_*
-→ recover same live proc_* incarnations by sequence + creation witnesses
-→ recover same physical file_*
+→ recover same live proc_* incarnations by BootEpoch + sequence + creation/handle witnesses
+→ recover same unchanged C: NTFS physical file_* only after volume/FileId + journal-ID + last-file-USN continuity token validates
 → resume output after old cursor
 → reconcile listener/service/session state
 → continue operation
@@ -42,7 +42,7 @@ create disposable NTFS workspace
 - workload survives kernel death;
 - same `job_*` recovered;
 - same still-live `proc_*` recovered exactly;
-- same physical `file_*` recovered exactly;
+- same unchanged C: NTFS `file_*` recovered exactly only when volume/FileId + journal-ID + last-USN token all match;
 - output produced during gap remains available within bounded spool retention;
 - listener current state is rediscovered without fabricating socket continuity across the observation gap;
 - no full-machine historical replay is invented.
@@ -52,6 +52,7 @@ create disposable NTFS workspace
 - server dies because kernel pipe closes;
 - job disappears because kill-on-close was set;
 - process recovered merely by PID without sequence/creation verification;
+- process verified using one object and then mutated by reopening a PID instead of acting through the same verified native handle;
 - listener silently rebound by port number;
 - output after gap unavailable because kernel owned the only pipe reader.
 
@@ -72,7 +73,9 @@ launch fixture A
 → relaunch same executable C
 → proc_C distinct
 → feed resolver hostile row PID P / sequence S2 / creation T2
-→ attempt terminate(proc_A)
+→ OpenProcess for proc_A and verify exact incarnation on that handle
+→ force/observe exit before mutation where practical
+→ attempt terminate(proc_A) through the same handle/resolver path
 ```
 
 ### Required result
@@ -243,7 +246,7 @@ file_A at C:\...\config.json
 ```text
 file_A → destroyed/replaced
 file_B → new concept at old path
-write(file_A) → stale/destroyed
+write(file_A) → stale/destroyed (same-handle identity verification; no second path lookup may retarget the mutation)
 file_B remains untouched by old handle operation
 ```
 
@@ -272,7 +275,37 @@ file_A exists at path P with content X
 
 Old `file_A` stays destroyed; replacement receives a new concept even though path/content match.
 
-## 10. Hard-link workflow
+## 10. Physical file-ID reuse / kernel-gap attack
+
+### Goal
+
+Prove that Windows file-ID reuse cannot create false post-gap physical continuity.
+
+### Deterministic Build 001 case
+
+```text
+retain unchanged file_A on C: NTFS with:
+  volume V
+  128-bit FileId F
+  journal ID J
+  last file USN U1
+→ kernel observation gap
+→ inject/simulate recovery candidate with same V/F but changed J and/or later file USN U2
+→ resolve old file_A
+→ attempt write(file_A)
+```
+
+### Required result
+
+- FileId equality alone is insufficient after an unobserved gap;
+- changed/missing journal-ID or per-file-USN evidence prevents exact continuation;
+- old `file_A` becomes stale/ambiguous/destroyed as evidence permits;
+- current candidate may be promoted separately but is never rebound to old `file_A`;
+- `write(file_A)` cannot touch the current candidate;
+- X: ReFS does not claim equivalent gap continuity while its journal is inactive.
+
+This deterministic resolver attack is required even if real FileId reuse is difficult to force on demand. It closes the Windows-documented fact that file IDs may be reused after deletion.
+## 11. Hard-link workflow
 
 ### Goal
 
@@ -290,7 +323,7 @@ file_A at path P1
 
 Both path bindings resolve to the same physical file identity. Removing one hard link does not imply the physical object is destroyed while another link remains.
 
-## 11. Listener/port reuse attack
+## 12. Listener/port reuse attack
 
 ### Goal
 
@@ -300,7 +333,7 @@ Prove endpoint reuse is not listener identity.
 
 ```text
 server A proc_A binds 127.0.0.1:P
-→ retain listener_A
+→ retain listener_A with exact proc_A + IP Helper bind/create timestamp witness
 → stop server A
 → wait listener_A closed
 → server B proc_B binds same 127.0.0.1:P
@@ -311,13 +344,13 @@ server A proc_A binds 127.0.0.1:P
 
 ```text
 listener_A remains closed
-listener_B is new
+listener_B is new (new exact owner and current bind/create witness)
 listener_B owner = exact proc_B
 ```
 
 The number `P` is only endpoint data.
 
-## 12. Filesystem watcher-overflow/gap workflow
+## 13. Filesystem watcher-overflow/gap workflow
 
 ### Goal
 
@@ -340,7 +373,7 @@ retain watched directory/file set
 - does not manufacture exact missing event order/history;
 - retained file handles remain exact only where current identity supports them.
 
-## 13. BootEpoch hostile transition
+## 14. BootEpoch hostile transition
 
 ### Goal
 
@@ -349,7 +382,7 @@ Prove transient machine objects cannot accidentally cross reboot.
 ### Deterministic Build 001 resolver simulation
 
 ```text
-BootEpoch A contains proc_A / listener_A / job_A
+BootEpoch A (Windows BootId witness when available) contains proc_A / listener_A / job_A
 → simulate persisted restart record with BootEpoch B
 → attempt resolve old transient handles
 ```
@@ -360,11 +393,12 @@ BootEpoch A contains proc_A / listener_A / job_A
 - old listener/connection/terminal-run state terminal/destroyed;
 - old native Job Object cannot be reopened across boot and job lifetime ends;
 - services/tasks/files/volumes are reconciled independently as persistent domains;
-- no transient rebinding into BootEpoch B.
+- no transient rebinding into BootEpoch B;
+- unavailable/conflicting BootId/last-boot evidence advances the logical epoch conservatively.
 
 A real reboot campaign belongs in later hardening once Build 001's deterministic resolver gate is stable.
 
-## 14. PowerShell provider death workflow
+## 15. PowerShell provider death workflow
 
 Only applies if Build 001 implements a separate PowerShell provider process.
 
@@ -386,7 +420,7 @@ kernel + fixture alive
 - runspace-local variables/functions/providers that actually died are reported lost/reinitialized;
 - provider death does not masquerade as OS object death.
 
-## 15. Raw-shell escape-hatch workflow
+## 16. Raw-shell escape-hatch workflow
 
 ### Goal
 
@@ -406,7 +440,7 @@ Raw stdout/stderr/exit status available.
 
 This proves only the escape hatch; it does **not** count as proof of SHELLeye's architecture.
 
-## 16. Structured-PowerShell workflow
+## 17. Structured-PowerShell workflow
 
 ### Goal
 
@@ -427,7 +461,7 @@ powershell.invoke(Get-Process for retained fixture PID)
 - no `Format-Table` parsing;
 - the PowerShell result is a provider facet/correlation, not the durable process ID.
 
-## 17. Program Host workflow
+## 18. Program Host workflow
 
 ### Goal
 
@@ -449,7 +483,7 @@ inspect machine/session/volume
 → structured PowerShell query
 → resource sample
 → output delta
-→ guarded config mutation
+→ same-handle guarded config mutation
 → file wait + world delta
 → rename same physical file
 → stop exact old worker
@@ -467,7 +501,7 @@ inspect machine/session/volume
 
 Required: at least 30 meaningful typed SDK operations and no model round trip between them.
 
-## 18. Concurrent external-writer workflow
+## 19. Concurrent external-writer workflow
 
 ### Goal
 
@@ -489,7 +523,7 @@ retain file_A revision N
 
 Equivalent stale-precondition behavior applies to process/service/native object mutations where the target incarnation can change.
 
-## 19. Cross-substrate future workflow
+## 20. Cross-substrate future workflow
 
 ### Goal
 
@@ -516,7 +550,7 @@ eyeBROWSE: browser/DOM/AX/browser-network meaning
 
 No substrate should copy the others' ontology merely to create a link.
 
-## 20. Failure philosophy
+## 21. Failure philosophy
 
 The pressure tests intentionally prefer honest loss of continuity over false continuity.
 

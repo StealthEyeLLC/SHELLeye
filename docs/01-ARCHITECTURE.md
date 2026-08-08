@@ -1,6 +1,6 @@
 # 01 — Canonical Architecture
 
-Status: **Canonical**  
+Status: **FINAL / SYNTHESIZED / VERIFIED / FROZEN FOR BUILD 001**
 Project: **SHELLeye**  
 Baseline: **2026-08-08**
 
@@ -99,10 +99,14 @@ A rename of the computer should not silently create a new SHELLeye machine.
 
 A process cannot survive a Windows reboot. Services, registered scheduled tasks, and files often can.
 
-At startup SHELLeye determines whether the machine crossed a boot boundary using current OS boot/uptime evidence and persisted state. Each detected boot receives a new `BootEpoch`.
+Build 001 persists a SHELLeye `BootEpoch` and binds it to the strongest current Windows boot evidence available:
 
-All transient native-process identity is scoped to the boot epoch.
+- **preferred target witness:** the `BootId` returned by handle-bound `ProcessTelemetryIdInformation` from the current SHELLeye process; final live probes returned the same BootId across Session 0 and the interactive session;
+- **corroboration/fallback:** Windows last-boot/uptime evidence such as the operating-system `LastBootUpTime` observation persisted from the prior kernel run.
 
+`ProcessTelemetryIdInformation` is an internal/subject-to-change Windows provider detail, so SHELLeye does not make its numeric BootId a portable protocol contract. If the preferred witness is unavailable or conflicts with persisted boot evidence, SHELLeye advances the logical `BootEpoch` conservatively rather than allowing transient objects to cross an uncertain boot boundary.
+
+All transient native-process, task-run, terminal-process, and listener identity is scoped to the BootEpoch. Named Job Objects are also boot-local native objects even though the higher-level `job_*` descriptor may remain persisted for honest terminal-state recovery.
 ### 3.3 World sequence
 
 SHELLeye maintains a monotonic observation sequence used for bounded deltas and cursors.
@@ -175,18 +179,24 @@ The target is build 26100.8973, so Build 001 can use the sequence-number path di
 
 No mutation operation may act on a stored PID by itself.
 
-For a retained `proc_*`, actuation resolves current reality before mutation:
+For a retained `proc_*`, Build 001 resolves and acts through one exact native handle:
 
 ```text
-stored process witness
-→ locate current PID/sequence observation
-→ OpenProcess(desired rights)
-→ verify handle creation time / current incarnation
-→ if still exact, act through that handle
-→ otherwise return destroyed/stale/access_denied
+stored BootEpoch/PID/SequenceNumber/creation witness
+→ OpenProcess(retained PID, required rights)
+→ verify creation time on that handle with GetProcessTimes
+→ while that same handle is held, verify the retained process sequence:
+     preferred target corroboration: ProcessTelemetryIdInformation when available
+     required fallback: fresh SystemBasicProcessInformation row for PID matches retained SequenceNumber
+→ if the process exited, the witness mismatches, or access prevents exact resolution:
+     return destroyed/stale/access_denied/inaccessible
+→ perform wait/termination/other handle-based actuation through that same opened handle
+→ close handle
 ```
 
-A handle opened to the original process remains a reference to that process even after it exits; the PID may later be reused. Process exit waits therefore use the exact process handle when available and reopen+revalidate after kernel recovery.
+The **opened process handle is the actuation anchor**. If the original process exits after `OpenProcess`, later PID reuse cannot redirect that handle to the replacement process; Windows keeps the handle bound to the original process object until the handle is closed. A post-open sequence mismatch therefore rejects the operation, and an exit after successful verification can only make the operation affect/fail against the original process object.
+
+On this target, `NtQueryInformationProcess(ProcessTelemetryIdInformation)` is a useful handle-bound corroborating query because it exposes process sequence/start/boot metadata. It remains provider-internal and optional because Microsoft documents `NtQueryInformationProcess` as internal/subject to change; exact correctness does not depend on that one information class.
 
 Primary sources:
 
@@ -194,11 +204,11 @@ Primary sources:
 - [OpenProcess](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-openprocess)
 - [GetProcessTimes](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes)
 - [TerminateProcess](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-terminateprocess)
+- [NtQueryInformationProcess / ProcessTelemetryIdInformation](https://learn.microsoft.com/en-us/windows/win32/api/winternl/nf-winternl-ntqueryinformationprocess)
 
 Hard invariant:
 
 > `terminate(old_proc)` must never terminate a different process that later reused the old PID.
-
 ### 4.4 Parentage is evidence, not magic identity
 
 Windows can report `InheritedFromUniqueProcessId`, but a parent may already have exited and its PID may have been reused.
@@ -345,12 +355,33 @@ Therefore Build 001 persistent jobs:
 
 Primary source: [Job Objects](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects).
 
-### Containment race
+### Creation-time job assignment
 
-When exact grouping is required, launch a SHELLeye child suspended, assign it to the job, then resume it. This avoids giving the initial process an uncontrolled window to spawn descendants before job association.
+For SHELLeye-created grouped workloads on the Build 001 target, the preferred launch path is `CreateProcessW` with `STARTUPINFOEX` and `PROC_THREAD_ATTRIBUTE_JOB_LIST`. Windows 10+ can assign the child to one or more Job Objects as part of process creation, so the intended job association exists before child user code executes.
 
-Do not force every external or incompatible workload into a Job Object. Existing job hierarchies, explicit breakaway behavior, application expectations, and same-session requirements are native realities that may make grouping inappropriate.
+Build 001 therefore prefers:
 
+```text
+create named Job Object
+→ associate job completion port while job is still inactive
+→ create restart-independent stdout/stderr handles
+→ build STARTUPINFOEX attribute list:
+     PROC_THREAD_ATTRIBUTE_JOB_LIST
+     PROC_THREAD_ATTRIBUTE_HANDLE_LIST for only required inherited stream handles
+→ CreateProcessW(... EXTENDED_STARTUPINFO_PRESENT ...)
+→ retain returned exact process/thread handles and witnesses
+```
+
+The older `CREATE_SUSPENDED → AssignProcessToJobObject → ResumeThread` sequence remains a compatibility fallback if the creation-time job-list path is unavailable or incompatible with a specific workload. It is no longer the preferred Build 001 path on STEALTHEYELLC.
+
+Explicit handle-list inheritance is a correctness/resource-lifetime primitive: persistent children inherit only the spool/stdin handles they actually require rather than every inheritable handle in the kernel process.
+
+Do not force every external or incompatible workload into a Job Object. Existing/nested job hierarchies, explicit breakaway behavior, application expectations, and native assignment failures remain OS facts that SHELLeye reports honestly.
+
+Primary sources:
+
+- [UpdateProcThreadAttribute](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-updateprocthreadattribute)
+- [Create processes](https://learn.microsoft.com/en-us/windows/win32/procthread/creating-processes)
 ### Job notifications are signals, not truth
 
 Job completion-port notifications are useful for new/exited-process and active-process-zero signals. Microsoft documents that most job completion-port messages are not guaranteed to be delivered. SHELLeye therefore reconciles actual job/process state after notifications and after recovery gaps.
@@ -361,19 +392,20 @@ Kernel-owned anonymous stdout/stderr pipes are a poor default for persistent job
 
 Build 001 therefore distinguishes output modes:
 
-- **short direct exec:** in-memory/anonymous-pipe capture is acceptable;
-- **persistent job:** stdout/stderr are redirected to bounded operational spool files or an equivalent restart-independent stream sink.
+- **short direct exec:** bounded in-memory/anonymous-pipe capture is acceptable;
+- **persistent job:** stdout/stderr are redirected to restart-independent **per-process/per-stream spool segments** opened for append and explicitly inherited by the child.
 
-The workload owns/open-writes the spool independently of the kernel. SHELLeye tracks file identity and byte cursors:
+The child holds the write handle independently of the kernel. Kernel death therefore does not close the child's spool handle. `STARTUPINFOEX` + `PROC_THREAD_ATTRIBUTE_HANDLE_LIST` limits inheritance to the required stream handles. SHELLeye tracks segment identity plus logical byte cursors and exposes:
 
 ```text
 job.output(job_18, afterCursor)
 ```
 
-Large output is not repeatedly injected into model context. Operational spools can rotate/spill and are deleted after the job/output retention window. They are runtime state, not a permanent receipt ledger.
+Model-facing reads are always bounded/chunked. Completed spool segments are garbage-collectable after the operational retention window. Build 001's deterministic fixture emits bounded output; **transparent rotation of an actively inherited spool file is not a Build 001 requirement**, because renaming/rotating the pathname does not redirect a child that already holds the old file object. A later dedicated stream sink may add live rotation only if measured workloads require it.
+
+This is restart-independent operating state, not a permanent logging/receipt architecture. Machine/power-loss durability is a different problem from SHELLeye-kernel-loss durability and does not justify per-write `FlushFileBuffers`/write-through in Build 001.
 
 Interactive stdin/screen semantics belong to a terminal/ConPTY provider rather than being forced into every job.
-
 ## 9. ExecutionContext
 
 Machine execution is context-dependent.
@@ -492,12 +524,14 @@ VolumeSerialNumber
 128-bit FileId
 ```
 
-Microsoft documents that the combination uniquely identifies a file on a single computer while the object exists.
+This is the primary current physical-identity witness on NTFS/ReFS. On ReFS, 128-bit IDs matter; older 64-bit file-index fields are not sufficient for the general model.
 
-Primary source: [FILE_ID_INFO](https://learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winbase-file_id_info).
+Windows explicitly documents an important limit: file IDs are not guaranteed unique **over time** because filesystems may reuse them after deletion. Therefore `volume + FileId` is authoritative for comparing current opened objects, but it is not by itself sufficient proof that an object survived an unobserved delete/recreate gap.
 
-On ReFS, 128-bit IDs matter; older 64-bit file-index fields are not sufficient for the general model.
+Primary sources:
 
+- [FILE_ID_INFO](https://learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winbase-file_id_info)
+- [BY_HANDLE_FILE_INFORMATION — file-ID lifetime remarks](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/ns-fileapi-by_handle_file_information)
 ### 12.2 Path is a binding
 
 A path is a location/name relationship, not identity.
@@ -525,12 +559,28 @@ This is intentionally different from CODEeye, which may preserve a logical sourc
 
 ### 12.3 Actuation rule
 
-A mutation through `file_*` / `dir_*` resolves and opens the current physical object, then compares identity before applying the operation. If the stored path now names an unrelated object, SHELLeye returns stale/destroyed rather than writing to the replacement.
+A mutation through `file_*` / `dir_*` must not verify one object and then reopen a pathname that can race to a replacement.
 
-`OpenFileById` is a useful provider primitive when supported and appropriate, but SHELLeye must not keep arbitrary long-lived file handles merely to manufacture persistence: an open handle changes deletion/share semantics and can perturb the machine being observed.
+Canonical Build 001 pattern:
 
-Primary source: [OpenFileById](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-openfilebyid).
+```text
+retained physical witness
+→ open current target (OpenFileById where appropriate, otherwise current path binding)
+→ query FILE_ID_INFO on that opened handle
+→ compare retained volume + 128-bit FileId
+→ check any requested revision/content precondition on the same handle
+→ perform WriteFile / SetFileInformationByHandle / other handle-based mutation through that same verified handle
+→ close handle
+```
 
+For rename/delete/end-of-file/metadata operations, prefer `SetFileInformationByHandle` classes where Windows exposes them. If an operation cannot be completed through the verified handle without another namespace lookup, the provider must carry an equivalent native precondition through that operation or conservatively reject a race it cannot make exact.
+
+`OpenFileById` is a useful provider primitive when supported and appropriate, but SHELLeye does not keep arbitrary long-lived file handles merely to manufacture persistence: such handles change deletion/share semantics and can perturb the machine being observed.
+
+Primary sources:
+
+- [OpenFileById](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-openfilebyid)
+- [SetFileInformationByHandle](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-setfileinformationbyhandle)
 ### 12.4 Content/metadata revision
 
 Physical identity does not imply unchanged content. Each retained file can have current revision evidence such as:
@@ -542,6 +592,34 @@ Physical identity does not imply unchanged content. Each retained file can have 
 - stream information on demand.
 
 Stateful writes/moves/replaces can accept expected identity/revision preconditions to avoid races with concurrent machine writers.
+### 12.5 Post-gap file continuity
+
+Because file IDs can be reused after deletion, exact file recovery after an unobserved kernel gap needs more than `FILE_ID_INFO` alone.
+
+For the Build 001 NTFS recovery fixture on `C:`, persist a **narrow continuity token** in addition to volume/FileId:
+
+```text
+USN journal ID
+last file/directory USN from FSCTL_READ_FILE_USN_DATA
+```
+
+On recovery, the unchanged retained fixture file may continue as the same `file_*` only when:
+
+- volume identity and 128-bit FileId still match;
+- the NTFS journal ID is unchanged;
+- the file's last USN is unchanged;
+- the OS query itself is accessible/supported.
+
+NTFS documents that a journal ID changes when prior USNs may be unusable, and all future USNs are greater than existing USNs within the valid journal chronology. Thus a delete/recreate that reuses a FileId cannot silently pass an unchanged `(journal ID, file USN)` continuity token. If the journal was reset/deleted, the file USN changed during the gap, the provider lacks the required access, or any witness disagrees, SHELLeye does **not** manufacture continuity: the retained concept becomes stale/ambiguous/destroyed as evidence permits and current reality may be promoted separately.
+
+This is deliberately **not full USN-journal ingestion**. Build 001 does not scan/replay the journal to reconstruct event history. A later provider may use journal records to prove continuity through files that legitimately changed during an observation gap.
+
+The `X:` ReFS smoke case does not claim equivalent post-gap continuity while its change journal is inactive; it proves current 128-bit physical identity only.
+
+Primary sources:
+
+- [FSCTL_READ_FILE_USN_DATA](https://learn.microsoft.com/en-us/windows/win32/api/winioctl/ni-winioctl-fsctl_read_file_usn_data)
+- [Using the Change Journal Identifier](https://learn.microsoft.com/en-us/windows/win32/fileio/using-the-change-journal-identifier)
 
 ## 13. Filesystem change ingestion
 
@@ -562,18 +640,19 @@ Watcher events do not become a permanent historical ledger.
 
 ### USN journal
 
-USN is a valuable later provider for missed-change recovery and efficient volume-scale scanning, but it is not Build 001 core.
+Broad USN journal ingestion/replay remains post-Build-001, but final verification found one narrow Build 001 use that materially improves correctness: **NTFS retained-file continuity across kernel gaps**.
 
-Reasons:
+Build 001 therefore uses `FSCTL_QUERY_USN_JOURNAL` + `FSCTL_READ_FILE_USN_DATA` only to persist/compare the journal ID and last-USN continuity token for the retained `C:` fixture file. It does not consume a volume event stream, reconstruct missed history, or require SHELLeye to create/resize a journal.
 
-- Build 001 identity/recovery can be proven with exact file identity + watcher dirty signals + reconciliation;
-- USN introduces journal-ID/checkpoint/gap handling and access requirements;
-- the live target's `C:` NTFS volume has an active journal, while `X:` ReFS currently reports no active change journal.
+The live target currently has an active journal on `C:` and no active journal on `X:`. Exact gap continuity is consequently provider/capability-specific; absence of a valid token reduces continuity rather than creating a false rebound.
 
-The architecture leaves a clean seam for later optional USN support rather than enabling/configuring journals merely for architectural prestige.
+Full journal scanning/checkpoint recovery remains later work because it adds history-window, truncation, journal-reset, privilege, and provider-specific complexity that A-D do not otherwise require.
 
-Primary source: [Change Journals](https://learn.microsoft.com/en-us/windows/win32/fileio/change-journals).
+Primary sources:
 
+- [FSCTL_READ_FILE_USN_DATA](https://learn.microsoft.com/en-us/windows/win32/api/winioctl/ni-winioctl-fsctl_read_file_usn_data)
+- [FSCTL_QUERY_USN_JOURNAL](https://learn.microsoft.com/en-us/windows/win32/api/winioctl/ni-winioctl-fsctl_query_usn_journal)
+- [Using the Change Journal Identifier](https://learn.microsoft.com/en-us/windows/win32/fileio/using-the-change-journal-identifier)
 ## 14. Volumes, reparse points, links, and streams
 
 `vol_*` is a stable volume concept based on Windows volume identity (volume GUID path/serial/filesystem data), not only `C:`/`X:` drive letters.
@@ -600,23 +679,30 @@ address family
 local address
 local port
 owning proc_* exact incarnation
+TCP bind/create timestamp when available
 observation generation
 ```
 
-Windows IP Helper APIs can return TCP/UDP tables with owning PID for IPv4/IPv6. The PID is immediately resolved to the exact process incarnation.
+For Build 001, query `GetExtendedTcpTable` with the `TCP_TABLE_OWNER_MODULE_LISTENER` class where available. `MIB_TCPROW_OWNER_MODULE` adds `liCreateTimestamp`, the time the context bind that created the TCP link occurred, alongside the owning PID. Resolve that PID immediately to the exact current `proc_*`.
 
-Primary source: [GetExtendedTcpTable](https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-getextendedtcptable).
+The bind timestamp is a useful additional listener-incarnation witness, **not a documented globally unique socket ID**. After an unobserved kernel gap, SHELLeye can reconstruct current endpoint reality and compare witnesses, but it still must not claim uninterrupted native-socket continuity solely because endpoint/PID/timestamp values match.
+
+Primary sources:
+
+- [GetExtendedTcpTable](https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-getextendedtcptable)
+- [MIB_TCPROW_OWNER_MODULE](https://learn.microsoft.com/en-us/windows/win32/api/tcpmib/ns-tcpmib-mib_tcprow_owner_module)
 
 Hard rule:
 
 ```text
-listener A on :8080 closes
-later listener B on :8080 opens
+proc A owns :8080 / listener_A
+A exits
+proc B later owns :8080
+→ listener_A remains closed/destroyed
 → B is a new listener concept
 ```
 
 Even if the endpoint tuple is identical, old `listener_*` must not silently rebound. After a kernel observation gap, continuity is conservative; current listener rediscovery does not invent proof that the same native socket remained continuously open.
-
 ### 15.3 Connections
 
 TCP/UDP connection/endpoint rows are high-cardinality and short-lived. Return them as query records by default; promote to `conn_*` only when ChatGPT retains/watches one.
@@ -964,7 +1050,7 @@ Do not persist every process ever seen, every command forever, all stdout foreve
 6. detect/validate BootEpoch;
 7. reopen/reconcile retained jobs;
 8. enumerate current process identity with sequence numbers and validate retained process witnesses;
-9. reconcile retained file identities/paths, services, listeners, sessions, and other interests;
+9. reconcile retained file identities/paths, including the C: NTFS journal-ID + last-USN continuity token where exact file continuity is claimed; reconcile services, listeners, sessions, and other interests;
 10. reestablish watchers/providers;
 11. emit compact recovery delta including any gaps/uncertainty.
 

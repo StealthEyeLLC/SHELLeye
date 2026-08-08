@@ -79,7 +79,7 @@ These paths are Build 001 implementation guidance; no runtime was created by the
 
 ## 4. USN/change-journal reality
 
-Live `fsutil usn queryjournal` results:
+Final-synthesis live probes confirmed:
 
 ### C: NTFS
 
@@ -90,18 +90,23 @@ Maximum Size: 32 MB
 Allocation Delta: 8 MB
 supported record versions: 2 through 4
 write range tracking: disabled
+FSCTL_READ_FILE_USN_DATA on a temporary file: record v3, nonzero last USN
 ```
 
 ### X: ReFS
 
 ```text
-Error 1179: The volume change journal is not active.
+fsutil queryjournal: Error 1179 — volume change journal is not active
+FSCTL_READ_FILE_USN_DATA on a temporary file: record v3, last USN = 0
 ```
 
 Architecture consequence:
 
-Build 001 must **not depend on USN** for correctness/recovery. Native physical identity + watcher dirty signals + reconciliation are sufficient for the first slice. A later USN provider can exploit active journals without requiring SHELLeye to enable/configure one simply to satisfy the architecture.
+Broad USN journal ingestion/replay remains post-Build-001. However, final verification exposed a real correctness limit: Windows file IDs can be reused after deletion, so `FILE_ID_INFO` alone cannot prove exact file continuity across an unobserved kernel gap.
 
+Build 001 therefore uses one **narrow C: NTFS continuity token** for its retained recovery fixture: current journal ID + that file's last USN (`FSCTL_READ_FILE_USN_DATA`), in addition to volume + 128-bit FileId. The fixture file is left unchanged during the kernel gap; exact recovery requires the journal ID and file USN to remain unchanged. Any gap in that evidence reduces continuity instead of causing a rebound.
+
+This does not turn USN into the filesystem event architecture and does not require creating/enabling a journal. X: remains a current 128-bit ReFS identity smoke test, not an equivalent post-gap continuity test while its journal is inactive.
 ## 5. .NET
 
 Observed:
@@ -211,7 +216,7 @@ owner: STEALTHEYELLC\StealthEye
 
 This validates the architectural requirement to model process/session context directly.
 
-Build 001 kernel development should initially run in the interactive `StealthEye` session through a persistent scheduled task/process, matching the workload session. Later system-service/multi-session architecture can be added when there is a concrete need to bridge multiple logon sessions.
+Build 001 kernel development should initially run in the interactive `StealthEye` session through a persistent scheduled task/process, matching the workload session. `StealthEye` is a member of the local Administrators group. For Build 001, configure the kernel task to run with that account's highest available privileges because Microsoft documents volume change-journal identifier queries as administrator operations. This is an intrinsic Windows access requirement for the narrow NTFS continuity witness, not a SHELLeye privilege architecture. Later system-service/multi-session architecture can be added when there is a concrete need to bridge multiple logon sessions.
 
 ## 11. Relevant Windows services/features
 
@@ -261,8 +266,10 @@ Not all are Build 001 core.
 - Windows named-pipe local RPC.
 - SQLite WAL operating state.
 - `SystemBasicProcessInformation.SequenceNumber` process witness on this build.
-- NTFS physical identity fixture plus ReFS smoke case.
-- interactive-user development kernel/session for the first slice.
+- handle-bound `ProcessTelemetryIdInformation` is live-tested as optional corroboration, not a sole dependency.
+- `PROC_THREAD_ATTRIBUTE_JOB_LIST` creation-time Job Object assignment and explicit `PROC_THREAD_ATTRIBUTE_HANDLE_LIST` stream inheritance are available on this Windows generation.
+- NTFS physical identity fixture plus narrow C: journal-ID/file-USN post-gap continuity token; ReFS current-identity smoke case.
+- interactive-user development kernel/session for the first slice, scheduled with highest available owner-account privileges for the NTFS journal-ID query.
 
 ### Explicitly not required
 
@@ -272,10 +279,14 @@ Not all are Build 001 core.
 - RDP;
 - Docker;
 - kernel driver;
-- active USN journal on every volume;
+- active USN journal on every volume (only the already-active C: journal supplies the narrow Build 001 continuity token);
 - new Windows service creation just for the fixture.
 
-## 14. Platform reinspection rule
+## 14. Final-synthesis verification note
+
+On 2026-08-08 the final synthesis pass re-verified Windows 11 24H2 build 26100.8973, .NET 10.0.302, Node 24.18.1, Windows PowerShell 5.1.26100.8972, C: NTFS, X: ReFS, the C:/X: journal state above, WSL 2.7.11.0, and Explorer session 1. A live `NtQueryInformationProcess(ProcessTelemetryIdInformation)` probe succeeded and returned process sequence/start/boot metadata on this target. No product runtime was created by these probes.
+
+## 15. Platform reinspection rule
 
 Before Build 001 claims measured completion, re-query the exact runtime/toolchain/OS state used by the implementation and update this document if it materially differs.
 

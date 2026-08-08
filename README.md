@@ -1,6 +1,6 @@
 # SHELLeye
 
-Status: **PLANNED — canonical architecture defined; product implementation has not begun**  
+Status: **FINAL / SYNTHESIZED / VERIFIED / FROZEN FOR BUILD 001 — product implementation has not begun**
 Owner: **StealthEyeLLC**  
 Primary operator: **ChatGPT**  
 Initial target: **STEALTHEYELLC / Windows 11 x64**  
@@ -45,10 +45,10 @@ Build 001 is Windows-first:
 
 - **Kernel:** C# / .NET 10, restartable, headless.
 - **Operating state:** SQLite WAL, bounded to current/recoverable machine state rather than an action ledger.
-- **Process identity:** a `proc_*` denotes exactly one native process lifetime. On the target Windows build the primary enumeration witness is `BootEpoch + PID + SystemBasicProcessInformation.SequenceNumber`, strengthened by creation time and handle verification before actuation. A restarted process is a new `proc_*`.
-- **Workload continuity:** `job_*` carries restartable multi-process workload identity. SHELLeye-created persistent jobs use named Windows Job Objects when technically compatible; they deliberately do not use kill-on-last-handle semantics.
-- **File identity:** `file_*` / `dir_*` denote physical filesystem objects, not paths. Windows `FILE_ID_INFO` plus volume identity is the primary witness; rename/hard-link changes do not imply replacement, while delete/recreate or atomic replacement creates a new object.
-- **Network:** `listener_*` is transient and bound to protocol/local endpoint plus an owning process incarnation. A port number is a value, not a durable object identity.
+- **Process identity:** a `proc_*` denotes exactly one native process lifetime. On the target Windows build the primary witness is `BootEpoch + PID + SystemBasicProcessInformation.SequenceNumber`, strengthened by creation time and same-handle verification before actuation; handle-bound `ProcessTelemetryIdInformation` is an optional Windows corroborator. A restarted process is a new `proc_*`.
+- **Workload continuity:** `job_*` carries restartable multi-process workload identity. SHELLeye-created persistent jobs use named Windows Job Objects when technically compatible, prefer creation-time membership through `PROC_THREAD_ATTRIBUTE_JOB_LIST`, explicitly whitelist inherited stream handles, and deliberately do not use kill-on-last-handle semantics.
+- **File identity:** `file_*` / `dir_*` denote physical filesystem objects, not paths. Windows `FILE_ID_INFO` plus volume identity is the primary current witness; because Windows may reuse file IDs after deletion, Build 001 adds a narrow C: NTFS journal-ID + per-file last-USN token only for exact post-kernel-gap recovery. Mutations verify and act through the same opened file handle wherever Windows exposes handle-based semantics.
+- **Network:** `listener_*` is transient and bound to protocol/local endpoint plus an exact owning process incarnation, with the IP Helper TCP bind/create timestamp as an additional witness where available. A port number is a value, not a durable object identity.
 - **PowerShell:** a structured provider based on hosted runspaces / `PSObject` results, not formatted terminal output and not canonical Windows truth.
 - **Terminal:** ConPTY remains a compatibility provider, not the core ontology.
 - **Events:** targeted native notifications and reconciliation. Events say what may have changed; authoritative current queries say what is true now.
@@ -116,7 +116,7 @@ Assembly/process boundaries are not a goal. Split components only when lifecycle
 
 ## Immediate vertical slice
 
-The smallest decisive Build 001 workload is a tiny deterministic local HTTP fixture started under a named Windows Job Object, with restart-safe stdout/stderr spooling, an exact retained process handle, a physical config-file identity, a child process, and a TCP listener. The acceptance suite restarts the worker, renames/replaces files, reuses an endpoint, kills/restarts the SHELLeye kernel, invokes structured PowerShell, and executes a 30+ operation Program Host flow.
+The smallest decisive Build 001 workload is a tiny deterministic local HTTP fixture started under a named Windows Job Object using creation-time job assignment where supported, with explicit restart-safe stdout/stderr spool segments, exact process identity, a physically identified C: NTFS config file with a narrow post-gap continuity token, a child process, and a TCP listener. The acceptance suite restarts the worker, renames/replaces files, reuses an endpoint, kills/restarts the SHELLeye kernel, invokes structured PowerShell, and executes a 30+ operation Program Host flow.
 
 The decisive invariant is simple:
 

@@ -1,6 +1,6 @@
 # 07 — Capability Matrix
 
-Status: **Canonical planning matrix**  
+Status: **FINAL / VERIFIED / FROZEN BUILD 001 capability matrix**
 Baseline: **2026-08-08**
 
 Classification:
@@ -15,10 +15,10 @@ Classification:
 | Capability | Class | Primary Windows source/provider | Identity / lifetime rule | Build 001 position |
 |---|---|---|---|---|
 | Machine identity | **Build 001 core** | SHELLeye installation state + Windows machine metadata | stable `machine_*`; name is descriptive, not sole identity | persist machine UUID |
-| Boot epoch | **Build 001 core** | Windows boot/uptime evidence | new `BootEpoch` every reboot | transient objects scoped to boot |
+| Boot epoch | **Build 001 core** | current process telemetry `BootId` where available + persisted Windows last-boot evidence | new logical `BootEpoch` every reboot/uncertain boundary | transient objects scoped to boot; telemetry ID is provider detail |
 | User/session | **Build 001 core** | WTS + `ProcessIdToSessionId` | session/logon lifetime distinct from process | model interactive StealthEye session |
 | Process enumeration | **Build 001 core** | `SystemBasicProcessInformation` | PID + SequenceNumber within BootEpoch; process lifetime only | target build supports sequence numbers |
-| Process exact actuation | **Build 001 core** | `OpenProcess`, `GetProcessTimes`, process handle APIs | verify exact incarnation before mutation | hard PID-reuse invariant |
+| Process exact actuation | **Build 001 core** | `OpenProcess` + same-handle creation/sequence verification; optional `ProcessTelemetryIdInformation` | exact opened process object, never stored PID alone | hard PID-reuse/race invariant |
 | Process exit wait | **Build 001 core** | exact process handle wait | process lifetime | event-driven exact wait |
 | Process tree | **Build 001 core** | process parent PID + SHELLeye launch/job evidence | parent edge has evidence quality | never bind by reused parent PID blindly |
 | Process command line | **Build 001 core** | WMI/CIM or provider-specific supported query | property of one process lifetime; may be inaccessible | on-demand, not identity |
@@ -28,11 +28,11 @@ Classification:
 | Loaded modules | **Core later** | PSAPI/ToolHelp | process-lifetime facet | on-demand |
 | Arbitrary handle enumeration | **Experimental** | native/NT inspection | high-cardinality/access-sensitive | not Build 001 |
 | Restart Manager file users | **Advanced** | Restart Manager | on-demand relation evidence | later `file.users`/lockers |
-| Direct executable launch | **Build 001 core** | CreateProcess / .NET ProcessStartInfo | creates new `cmd_*` + `proc_*` (+ optional `job_*`) | explicit executable/argv/cwd/env |
+| Direct executable launch | **Build 001 core** | `CreateProcessW`/STARTUPINFOEX for grouped persistent workloads; .NET ProcessStartInfo for simpler direct exec | creates new `cmd_*` + `proc_*` (+ optional `job_*`) | explicit executable/argv/cwd/env |
 | Command invocation | **Build 001 core** | SHELLeye actuation state | temporary operation concept | garbage-collectable, no ledger |
-| Windows Job Object workload | **Build 001 core** | named Job Objects | `job_*` can outlive kernel; process members remain separate | no kill-on-close for persistent jobs |
+| Windows Job Object workload | **Build 001 core** | named Job Objects + `PROC_THREAD_ATTRIBUTE_JOB_LIST` | `job_*` can outlive kernel; process members remain separate | creation-time assignment preferred; no kill-on-close |
 | Job descendant events | **Build 001 core** | Job Object completion port + query | notifications are signals, query is truth | reconcile after event/gap |
-| Persistent stdout/stderr | **Build 001 core** | restart-independent spool files | cursor lifetime tied to operational job retention | survive kernel restart |
+| Persistent stdout/stderr | **Build 001 core** | explicit inherited per-process/per-stream spool segments | cursor lifetime tied to operational retention | survive kernel restart; no fake live-file rotation |
 | Short exec stdout/stderr | **Build 001 core** | ordinary pipes | command/process lifetime | bounded capture |
 | Service query/state | **Build 001 core** | SCM / `QueryServiceStatusEx` | `svc_*` registration persists across process restarts | inspect existing service |
 | Service notifications/mutation | **Core later** | `NotifyServiceStatusChange`, SCM mutation APIs | service separate from process | query seam in Build 001 |
@@ -43,19 +43,20 @@ Classification:
 | Raw cmd/shell | **Fallback** | cmd.exe / direct shell process | command/terminal semantics | prove arbitrary command path |
 | Terminal session | **Core later** | ConPTY | `term_*` provider/session lifetime | deliberately not Build 001 |
 | Windows 24H2 `ReleasePseudoConsole` | **Advanced** | ConPTY lifecycle API | terminal client-group lifecycle | future terminal recovery/cleanup |
-| File identity | **Build 001 core** | `FILE_ID_INFO` + volume identity | physical object; path is binding | 128-bit file ID |
+| File identity | **Build 001 core** | `FILE_ID_INFO` + volume identity | current physical object; path is binding; FileId may be reused after deletion | 128-bit file ID |
 | Directory identity | **Build 001 core** | same physical file APIs | physical directory object | rename continuity test |
-| File content/metadata revision | **Build 001 core** | file query/hash as needed | mutable revision within physical object | guarded writes |
+| File content/metadata revision | **Build 001 core** | file query/hash as needed | mutable revision within physical object | same-handle guarded writes/mutations |
 | File rename/hard links | **Build 001 core** | filesystem APIs | same physical object may have changing/multiple paths | deterministic tests |
 | Atomic file replacement | **Build 001 core** | file identity re-query | replacement = new physical concept | identity killer |
 | File delete/recreate | **Build 001 core** | file identity re-query | recreation = new physical concept | identity killer |
 | Filesystem watcher | **Build 001 core** | `ReadDirectoryChangesW` / watcher | dirty signal; can overflow/gap | targeted watch + reconcile |
-| USN journal | **Advanced** | NTFS/ReFS change journal | journal-ID/USN evidence; per-volume | defer; X: journal inactive |
+| NTFS retained-file gap token | **Build 001 core** | `FSCTL_QUERY_USN_JOURNAL` + `FSCTL_READ_FILE_USN_DATA` | journal ID + per-file last USN supplements reusable FileId across Milestone A gap | narrow C: continuity only; no replay |
+| Full USN journal ingestion/replay | **Advanced** | NTFS/ReFS change journal | bounded journal evidence; per-volume | defer; narrow C: file token only in Build 001; X: journal inactive |
 | Volumes/mounts | **Build 001 core** | volume APIs | volume concept distinct from drive letter | C: NTFS + X: ReFS summary |
 | Reparse points/junctions/symlinks | **Core later** | file/reparse APIs | physical/topology facet | inspect when relevant |
 | Alternate data streams | **Advanced** | NTFS stream APIs | promoted stream facet only when retained | not Build 001 |
 | File locks/share failures | **Build 001 core** | CreateFile/native errors | current OS fact | typed sharing/busy errors |
-| TCP listeners | **Build 001 core** | IP Helper owner-PID tables | transient listener + exact owner process | fixture wait/identity test |
+| TCP listeners | **Build 001 core** | IP Helper `TCP_TABLE_OWNER_MODULE_LISTENER` | transient listener + exact owner process + bind/create timestamp witness | fixture wait/identity test; no post-gap socket-continuity claim |
 | Durable `port_*` concept | **Rejected** | n/a | port is scalar endpoint value | never identity |
 | TCP connections | **Core later** | IP Helper | short-lived query record; promote if retained | not gate-critical |
 | UDP endpoints | **Core later** | IP Helper UDP owner-PID tables | short-lived endpoint record | later |
@@ -90,6 +91,7 @@ machine + boot + session
 process identity / exact waits / exact actuation
 job group + persistence + output cursors
 file + directory + volume physical identity
+narrow C: journal-ID + per-file last-USN gap token
 filesystem dirty signal + reconciliation
 TCP listener ownership / reuse
 service query / process relationship

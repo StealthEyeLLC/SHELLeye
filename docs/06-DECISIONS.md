@@ -1,6 +1,6 @@
 # 06 — Decisions
 
-Status: **Canonical**  
+Status: **FINAL / SYNTHESIZED / VERIFIED / FROZEN FOR BUILD 001**
 Baseline: **2026-08-08**
 
 This file distinguishes decisions that are strong enough to build against from implementation details that should remain open until Build 001 evidence exists.
@@ -35,54 +35,69 @@ PID, path, drive letter, port number, service PID, provider object instance, and
 
 Processes do not rebound across restart. Same executable, same command line, same service, or same PID later does not imply same `proc_*`.
 
-On the target build, the preferred process witness is:
+On the target build, the preferred retained process witness is:
 
 ```text
 BootEpoch + PID + SystemBasicProcessInformation.SequenceNumber + creation time
 ```
 
-Every process mutation re-resolves and verifies the exact current incarnation before acting.
+Every retained-process mutation uses **same-handle exact actuation**:
 
+```text
+OpenProcess(retained PID)
+→ verify creation time on that handle
+→ while that same handle is held, verify retained SequenceNumber
+   (ProcessTelemetryIdInformation when available; fresh SystemBasicProcessInformation fallback)
+→ act/wait through that same handle
+```
+
+This closes the PID-reuse race between enumeration and mutation. A process handle opened to the original process cannot redirect to a later process that reuses the PID.
 ### D-008 — Long-lived restart continuity belongs above the process
 
 Use `job_*`, `svc_*`, registered `task_*`, or later workload concepts for logical continuity across native process replacement.
 
 ### D-009 — Named Windows Job Objects are the preferred SHELLeye-created grouped-workload facet
 
-When compatible:
+When compatible on the Build 001 target:
 
-- launch initial process suspended;
-- assign to job before resume;
+- create a unique named Job Object and persist the native name;
+- associate the completion port while the job is still inactive;
 - do not set `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE` for persistent jobs;
-- persist native job name;
-- reopen after kernel recovery while members remain live;
+- prefer `STARTUPINFOEX + PROC_THREAD_ATTRIBUTE_JOB_LIST` so job membership is established as part of process creation before child user code runs;
+- use `PROC_THREAD_ATTRIBUTE_HANDLE_LIST` so only intended restart-safe stream handles are inherited;
+- retain `CREATE_SUSPENDED → AssignProcessToJobObject → ResumeThread` as a compatibility fallback, not the preferred path;
+- reopen the job after kernel recovery while members remain live;
 - use completion-port messages as signals, not sole truth.
 
 Do not force incompatible/external workloads into jobs.
-
 ### D-010 — Persistent job output is restart-independent
 
-Persistent jobs default to bounded operational stdout/stderr spools or an equivalent sink independent of kernel lifetime. Short direct executions may use ordinary pipes.
+Persistent jobs use bounded operational **per-process/per-stream spool segments** whose write handles are inherited explicitly by the child and therefore survive kernel death independently of the kernel process. Logical output cursors span retained segments; model-facing reads are bounded.
 
+Short direct executions may use ordinary pipes.
+
+Build 001 does **not** claim transparent live rotation of an actively inherited spool file: renaming/rotating a pathname does not redirect a child that already holds the old file object. Completed segments are garbage-collected after operational retention; a dedicated stream sink is later work only if measured volume requires it.
 ### D-011 — Generic SHELLeye `file_*` / `dir_*` identity is physical
 
-The primary Windows witness is volume identity + `FILE_ID_INFO` 128-bit file ID.
+The primary Windows current witness is volume identity + `FILE_ID_INFO` 128-bit file ID.
 
 - rename/hard-link path change can preserve the same physical concept;
 - atomic replacement creates a new physical concept;
 - delete/recreate creates a new physical concept;
-- path is a binding, not identity.
+- path is a binding, not identity;
+- Windows may reuse file IDs after deletion, so volume + FileId alone is **not** sufficient proof of exact continuity across an unobserved gap.
+### D-012 — File mutation is same-handle identity guarded
 
-### D-012 — File mutation is identity guarded
+A retained file/directory operation opens the candidate object, verifies physical identity and any requested revision precondition, and performs the mutation through **that same native handle** wherever Windows exposes handle-based semantics (`WriteFile`, `SetFileInformationByHandle`, and related classes). An old `file_*` never silently writes/renames/deletes a replacement occupying the same path.
 
-A retained file/directory operation opens/resolves the current object and verifies physical identity/revision before mutation. An old `file_*` never silently writes a replacement occupying the same path.
+`OpenFileById` may be used where it materially reduces namespace races. Arbitrary long-lived file handles are not retained merely for continuity because they can alter normal sharing/delete semantics.
 
+For exact Milestone A recovery of the unchanged retained `C:` NTFS fixture file, the stored continuity witness additionally includes the current USN journal ID + the file's last USN. Any mismatch/loss of that evidence prevents exact rebound.
 ### D-013 — A durable `port_*` concept is rejected
 
-Port numbers are values. `listener_*` is a transient concept tied to protocol/endpoint plus an exact owning process incarnation and an observation generation.
+Port numbers are values. `listener_*` is a transient concept tied to protocol/endpoint + an exact owning process incarnation + observation generation, with IP Helper `liCreateTimestamp` used as an additional TCP listener-incarnation witness where available.
 
-Port close/reuse creates a new listener concept.
-
+The bind timestamp is not treated as a documented globally unique socket ID. Port close/reuse creates a new listener concept, and post-gap current-state reconstruction does not manufacture uninterrupted socket continuity.
 ### D-014 — Services and tasks are not processes
 
 `svc_*` remains the logical SCM service while its `current_process` changes. Registered scheduled tasks are separate from task-run instances; Scheduler instance GUID is a useful run witness.
@@ -109,10 +124,22 @@ Terminal sessions exist for REPLs/interactive/TUI/terminal-dependent programs. T
 
 Job notifications, file watchers, service notifications, ETW/Event Log, and later event providers accelerate synchronization. Gap/overflow/provider restart triggers reconciliation.
 
-### D-020 — USN is deferred from Build 001
+### D-020 — Full USN journal ingestion is deferred; a narrow NTFS continuity token is Build 001 core
 
-The architecture keeps a USN provider seam, but Build 001 correctness must not depend on it. Current target evidence shows an active C: NTFS journal and no active X: ReFS journal.
+**Previous setup-pass decision:** treat USN entirely as post-Build-001.
 
+**Final verification evidence:** Windows explicitly permits file IDs to be reused after deletion. Therefore `volume + FileId` alone could falsely classify a delete/recreate that occurred during an unobserved kernel gap as the same physical file if the ID were recycled.
+
+**Frozen Build 001 decision:** do not ingest/replay the USN journal, but for the retained unchanged `C:` NTFS Milestone A fixture file persist and compare:
+
+```text
+USN journal ID
+per-file last USN from FSCTL_READ_FILE_USN_DATA
+```
+
+in addition to volume + 128-bit FileId. If the journal changed/reset, the file USN changed, access is unavailable, or any witness disagrees, exact continuity is not claimed. `X:` ReFS remains a current-identity smoke case while its journal is inactive.
+
+This is the only frozen research decision whose Build 001 classification materially changed in the final synthesis pass.
 ### D-021 — Broad ETW is deferred from Build 001
 
 Selective ETW may later reduce polling or improve external process/network lifecycle visibility. Build 001 does not become an ETW telemetry collector.
@@ -125,8 +152,11 @@ Stateful/special providers such as PowerShell may be separate when independent l
 
 ### D-023 — Multiple machine lifetimes remain explicit
 
-At minimum distinguish stable machine identity, BootEpoch, SHELLeye observation sequence, process/job/file/service/task/session/listener/provider lifetimes/revisions as needed. Do not force one global version to imply causal order it does not possess.
+At minimum distinguish stable machine identity, BootEpoch, SHELLeye observation sequence, process/job/file/service/task/session/listener/provider lifetimes/revisions as needed.
 
+On Windows Build 001, BootEpoch prefers the current handle-bound process-telemetry `BootId` when available and is corroborated/fallbacked by persisted Windows last-boot evidence. The telemetry class is a provider detail rather than a portable contract; unavailable/conflicting evidence advances the logical epoch instead of rebinding transient objects.
+
+Do not force one global version to imply causal order it does not possess.
 ### D-024 — Delta-first / interest-driven observation
 
 Normal operation tracks promoted/retained interests and bounded changes rather than repeatedly returning full machine enumerations. High-cardinality objects stay query records until retained.
@@ -162,6 +192,18 @@ false rebounds = 0
 
 Loss of continuity is acceptable when exact identity cannot be proven.
 
+## Final synthesis changes from the prior canonical baseline
+
+The final verification pass preserved the ontology but changed/strengthened the following native implementation decisions where primary-source evidence justified it:
+
+1. **Process actuation race** — old: reopen + creation-time verification was required, but the snapshot/open/mutation race was not stated strongly enough. New: verify creation time and retained sequence while the **same opened process handle** is held, then mutate/wait through that handle. Optional `ProcessTelemetryIdInformation` strengthens the target provider.
+2. **BootEpoch witness** — old: generic boot/uptime evidence. New: prefer the current process-telemetry `BootId` when available, corroborated/fallbacked by persisted Windows last-boot evidence; uncertainty advances the epoch.
+3. **Job launch path** — old: suspended launch → assign job → resume was preferred. Evidence: Windows 10+ `PROC_THREAD_ATTRIBUTE_JOB_LIST` assigns the child to jobs during extended process creation. New: creation-time Job Object assignment is preferred on STEALTHEYELLC; suspended/assign/resume is fallback.
+4. **Inherited output handles/output segments** — old: restart-independent spool files were specified but inheritance/active rotation semantics were loose. New: `PROC_THREAD_ATTRIBUTE_HANDLE_LIST` explicitly selects inherited handles; persistent output uses per-process/per-stream segments and does not claim transparent live rotation of an already-open child handle.
+5. **File mutation and post-gap continuity** — old: identity guard existed, and volume + `FILE_ID_INFO` was treated as sufficient recovery witness. Evidence: file IDs can be reused after deletion. New: mutations verify and act through the same file handle; exact Milestone A C: NTFS recovery additionally requires unchanged journal ID + last-file-USN. This is the only change that moves a capability classification into Build 001: the narrow token is core while full USN ingestion/replay stays deferred.
+6. **Listener witness** — old: endpoint + exact owner process + observation generation. Evidence: owner-module IP Helper rows expose `liCreateTimestamp`. New: retain that bind timestamp as an additional incarnation witness without promoting it to globally unique socket identity.
+
+No concept-lifetime decision changed: `proc_*` remains one native process lifetime; file identity remains physical; listener identity remains transient; higher-level job/service/task concepts own restart continuity.
 ## Deferred decisions
 
 ### DD-001 — Exact PowerShell hosting engine
@@ -188,10 +230,9 @@ Build 001 runs in the interactive `StealthEye` session. A later LocalSystem serv
 
 Build 001 uses targeted IP Helper queries/waits. Selective ETW or another event source may replace/reduce polling later if measurements justify it.
 
-### DD-007 — Output spool rotation/retention thresholds
+### DD-007 — Output spool retention and future active-stream sink
 
-The architectural requirement is bounded operational retention and cursor continuity; exact sizes/durations wait for measurement.
-
+The architectural requirement is bounded operational retention and cursor continuity across per-process/per-stream segments. Exact sizes/durations wait for measurement. Transparent active-file rotation is not promised; a future dedicated sink must earn itself through measured need.
 ### DD-008 — Generic connection/pipe promotion semantics
 
 Network connections and named pipes are high-cardinality. Retention/identity rules should be pressure-tested in later builds.
@@ -262,10 +303,9 @@ Rejected. Most state already lives outside SHELLeye. Separate processes must ear
 
 Rejected for Build 001. It adds event volume/complexity without being necessary to prove the machine-world spine.
 
-### R-015 — USN as mandatory Build 001 recovery layer
+### R-015 — Full USN journal ingestion/replay as mandatory Build 001 recovery architecture
 
-Rejected. The first slice can reconcile exact current physical identity without it, and the live ReFS volume currently has no active journal.
-
+Rejected. Build 001 uses only the narrow C: NTFS journal-ID + per-file last-USN continuity token needed to close the file-ID-reuse gap. It does not scan/replay journal history, and the live ReFS volume currently has no active journal.
 ### R-016 — Keep arbitrary native handles alive through a permanent broker
 
 Rejected as a default architecture. Process handles can be reopened/revalidated, named Job Objects remain while live members exist, and long-lived file handles can perturb deletion/share semantics. Reconsider only for a concrete capability.
