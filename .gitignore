@@ -1,0 +1,46 @@
+# .NET
+bin/
+obj/
+.vs/
+*.user
+*.suo
+
+# Node / Program Host
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test/build artifacts
+TestResults/
+coverage/
+artifacts/
+*.trx
+*.binlog
+
+# Runtime operating state (must live outside the repository)
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.etl
+*.dmp
+
+# Runtime output/spools
+spool/
+runtime/
+Temp/
+*.log
+
+# Editor / OS noise
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Local environment files
+.env
+.env.*
+!.env.example
