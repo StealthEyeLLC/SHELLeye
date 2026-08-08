@@ -661,15 +661,15 @@ uncertain parent PID        → reported/unknown relation, not false exact edge
 
 ### File/directory
 
-8. file content edit;
-9. file rename;
-10. directory rename;
-11. hard-link case where practical;
-12. atomic replacement;
-13. delete/recreate same path;
-14. recreate same content;
-15. old-file write attempt;
-16. deterministic post-gap file-ID reuse simulation: same volume/FileId candidate but changed journal ID or file USN must not recover the old `file_*`.
+9. file content edit;
+10. file rename;
+11. directory rename;
+12. hard-link case where practical;
+13. atomic replacement;
+14. delete/recreate same path;
+15. recreate same content;
+16. old-file write attempt;
+17. deterministic post-gap file-ID reuse simulation: same volume/FileId candidate but changed journal ID or file USN must not recover the old `file_*`.
 
 Expected:
 
@@ -684,10 +684,10 @@ same FileId + changed continuity token → old file_* not recovered
 
 ### Listener
 
-16. server A listener opens;
-17. server A exits;
-18. same port reused by server B;
-19. old listener resolution attempt.
+18. server A listener opens;
+19. server A exits;
+20. same port reused by server B;
+21. old listener resolution attempt.
 
 Expected:
 
@@ -699,10 +699,10 @@ no rebound by port number
 
 ### Recovery
 
-20. kernel death with live workload;
-21. kernel recovery;
-22. separate provider death/recovery if such provider exists;
-23. boot-epoch transition simulation in resolver tests; old transient process/listener concepts must never resolve into the new epoch.
+22. kernel death with live workload;
+23. kernel recovery;
+24. separate provider death/recovery if such provider exists;
+25. boot-epoch transition simulation in resolver tests; old transient process/listener concepts must never resolve into the new epoch.
 
 ### Hard metrics
 
