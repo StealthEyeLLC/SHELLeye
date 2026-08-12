@@ -1,0 +1,101 @@
+﻿{
+    "status":  "PROSPECTIVE RUN 003 FREEZE BINDING",
+    "capturedUtc":  "2026-08-12T16:18:32.5626056+00:00",
+    "branch":  "build/build002-provider-neutrality",
+    "executionLeaseCommit":  "8d0112a397873b54bf6f8168ade87de985b73bf1",
+    "implementationCommit":  "6bb4806a64e27b82e7e664f6ad915364fe8d99b6",
+    "implementationTree":  "ac54028898a4257cf04ca23dac7a373aacb69203",
+    "programHostTree":  "5411a5cd66865b024ef88d2a6232259dbe956575",
+    "acceptanceTestTree":  "0015208c988a7457c8aa667714b45da9c824f867",
+    "linuxHelperSourceTree":  "9cd8730f4f8e8b9b6d03d320e0e1c27a166d5d50",
+    "researchBlob":  "a7faba9d4356afcebc1a83679fbd1cb4d4c2e448",
+    "specBlob":  "bfc4c66d1df605b90a4c3fe15bf18c3482c12fcb",
+    "providerMatrixBlob":  "f49b5e547ca139098a98ec903c05e7fab6b5c245",
+    "windows":  {
+                    "displayVersion":  "25H2",
+                    "build":  "26200.9168"
+                },
+    "wsl":  {
+                "version":  "2.7.11.0",
+                "distribution":  "Ubuntu-24.04",
+                "registration":  "{aa957c59-794f-4ad3-ae28-9188cae51ee3}"
+            },
+    "node":  {
+                 "version":  "v24.18.1",
+                 "sha256":  "AC51903C4C111815D52280B1FDCC8DA067CBB37E2FE1A765097B85C3292C8582"
+             },
+    "runtime":  {
+                    "pipe":  "shelleye-build002-run003-measured",
+                    "database":  "C:\\SHELLeye\\state\\build002-run003-measured\\shelleye.db",
+                    "kernelPid":  31612,
+                    "kernelEpoch":  "kernel_1",
+                    "powerShellProviderEpoch":  "provider_1",
+                    "bootEpoch":  "boot_1",
+                    "kernelRoot":  "C:\\SHELLeye\\runtime\\build002-run003-measured\\kernel",
+                    "kernelDllSha256":  "822237700CC99133E5C2376959B104D2190F33F09FAA163A82315D5677826617",
+                    "kernelApphostSha256":  "CCBDAF2FBCA69E77F70977C2A4DDD524D3A054A809D5FEB32771629BE8C2F2E3",
+                    "measuredApphostAlias":  "SHELLeye.Run003.Measured.exe",
+                    "measuredApphostAliasSha256":  "CCBDAF2FBCA69E77F70977C2A4DDD524D3A054A809D5FEB32771629BE8C2F2E3",
+                    "kernelPublishFiles":  546,
+                    "kernelPublishExactMatch":  true,
+                    "linuxRoot":  "C:\\SHELLeye\\runtime\\build002-run003-measured\\linux\\app",
+                    "linuxHelperExeSha256":  "33533827987DAA5A7801CC2EC88407CA941379594D313557B6845DBCB5163F61",
+                    "linuxHelperDllSha256":  "726E27D9016A9BBDBB0174D95CEC1AA66A3A2D4EBD14A20DC4AF4FF932D7A22C",
+                    "linuxPublishFiles":  192,
+                    "linuxPublishExactMatch":  true
+                },
+    "kernelProcess":  {
+                          "pid":  31612,
+                          "sessionId":  1,
+                          "owner":  "STEALTHEYELLC\\StealthEye",
+                          "executable":  "C:\\SHELLeye\\runtime\\build002-run003-measured\\kernel\\app\\SHELLeye.Run003.Measured.exe"
+                      },
+    "anchor":  {
+                   "pid":  79468,
+                   "expectedStartTimeUtcTicks":  639221480989521559,
+                   "actualStartTimeUtcTicks":  639221480989521559,
+                   "startTimeMatch":  true,
+                   "sessionId":  1,
+                   "owner":  "STEALTHEYELLC\\StealthEye",
+                   "parentPid":  113176,
+                   "parentName":  "WmiPrvSE",
+                   "executable":  "C:\\Program Files\\WSL\\wsl.exe",
+                   "distro":  "Ubuntu-24.04",
+                   "providerKey":  "wsl:{aa957c59-794f-4ad3-ae28-9188cae51ee3}"
+               },
+    "ubuntuClients":  [
+                          {
+                              "pid":  79468,
+                              "parentPid":  113176,
+                              "sessionId":  1,
+                              "owner":  "STEALTHEYELLC\\StealthEye",
+                              "commandLine":  "\"C:\\Program Files\\WSL\\wsl.exe\" --distribution Ubuntu-24.04 --user root --exec /usr/bin/sleep infinity"
+                          },
+                          {
+                              "pid":  120992,
+                              "parentPid":  31612,
+                              "sessionId":  1,
+                              "owner":  "STEALTHEYELLC\\StealthEye",
+                              "commandLine":  "\"C:\\Program Files\\WSL\\wsl.exe\" --distribution Ubuntu-24.04 --user root --exec /var/tmp/shelleye-build002/SHELLeye.Platform.Linux --server --provider-key wsl:{aa957c59-794f-4ad3-ae28-9188cae51ee3} --distro Ubuntu-24.04"
+                          }
+                      ],
+    "l0":  {
+               "path":  "evidence/build002/run-003/l0-owner.json",
+               "sha256":  "D4D16001968B809764D1C2DA53B6944ADB0856D116CD706025DC1562ABACE6A2"
+           },
+    "taskSerialization":  {
+                              "leaseSnapshotSha256":  "AAB84C97B450B2E4F0B9D24CBC50FB8007D4C845BCEC8F0EEAB3E521D2A89855",
+                              "expectedUbuntuClientCount":  2,
+                              "extraneousUbuntuClients":  0
+                          },
+    "thresholds":  {
+                       "pidStressIterations":  256,
+                       "programHostTypedOperationsMinimum":  40,
+                       "programHostLinuxOperationsMinimum":  12,
+                       "modelCallsBetweenPrimitives":  0,
+                       "falseProcessRebounds":  0,
+                       "wrongProcessMutations":  0,
+                       "falseFileRebounds":  0,
+                       "wrongFileMutations":  0
+                   }
+}
