@@ -1,0 +1,25 @@
+{
+    "status":  "prospective-pre-l1-runtime-bind",
+    "atUtc":  "2026-08-12T13:37:39.7186703+00:00",
+    "acceptanceFreezeCommit":  "fea71ed342fb6c7f3e9202e5aba2fbe2110ca346",
+    "implementationCommit":  "2d81186040268c101497555f5a9425d0eba18ce2",
+    "node":  {
+                 "path":  "C:\\SHELLeye\\runtime\\node\\node-v24.18.1-win-x64\\node.exe",
+                 "version":  "v24.18.1",
+                 "sha256":  "AC51903C4C111815D52280B1FDCC8DA067CBB37E2FE1A765097B85C3292C8582",
+                 "size":  92540232
+             },
+    "l1Harness":  {
+                      "path":  "tests/acceptance/build002-linux-pid-reuse-stress.js",
+                      "gitBlob":  "10efcf1ffb09516d2bb6aaacb40f8dde7e58c12e",
+                      "iterations":  256
+                  },
+    "priorWrapperAttempt":  {
+                                "classifiedAs":  "launch-wrapper-nonexecution",
+                                "reason":  "node.exe was not on the scheduled-task PATH",
+                                "nodeStarted":  false,
+                                "harnessResultProduced":  false,
+                                "acceptanceCaseStarted":  false
+                            },
+    "correction":  "invoke the same frozen JavaScript with the bound absolute Node executable path"
+}
