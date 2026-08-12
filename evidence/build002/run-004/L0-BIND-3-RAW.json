@@ -1,0 +1,544 @@
+﻿{
+    "capturedUtc":  "2026-08-12T16:43:57.8632784+00:00",
+    "windowsContext":  {
+                           "whoami":  "stealtheyellc\\stealtheye",
+                           "sessionId":  1,
+                           "username":  "StealthEye",
+                           "userProfile":  "C:\\Users\\StealthEye",
+                           "kernelPid":  21480,
+                           "kernelExecutable":  "C:\\SHELLeye\\runtime\\build002-run004\\kernel\\app\\SHELLeye.Run004.Measured.exe",
+                           "pipe":  "shelleye-build002-run004-measured",
+                           "database":  "C:\\SHELLeye\\state\\build002-run004\\shelleye.db"
+                       },
+    "hello":  {
+                  "protocol":  "shelleye-rpc",
+                  "version":  1,
+                  "kernelEpoch":  "kernel_1",
+                  "providerEpoch":  "provider_1",
+                  "bootEpoch":  "boot_1"
+              },
+    "providers":  {
+                      "providers":  [
+                                        {
+                                            "worldId":  "machine_1",
+                                            "providerKind":  "windows",
+                                            "providerKey":  "3563f893-a0f4-49e6-99df-2808fc306a74",
+                                            "name":  "STEALTHEYELLC",
+                                            "state":  "current",
+                                            "worldEpoch":  "boot_1",
+                                            "providerEpoch":  "provider_1",
+                                            "capabilities":  {
+                                                                 "deepWindowsBuild001":  true
+                                                             },
+                                            "metadata":  {
+                                                             "relationship":  "host"
+                                                         }
+                                        },
+                                        {
+                                            "worldId":  "world_1",
+                                            "providerKind":  "linux-wsl2",
+                                            "providerKey":  "wsl:{aa957c59-794f-4ad3-ae28-9188cae51ee3}",
+                                            "name":  "Ubuntu-24.04",
+                                            "hostMachineId":  "machine_1",
+                                            "state":  "current",
+                                            "worldEpoch":  "linux_epoch_a4ea67a87225c14cba568059",
+                                            "providerEpoch":  "linux_provider_5353ed5670c94bc991e6ea9a61433398",
+                                            "capabilities":  {
+                                                                 "pidfd":  true,
+                                                                 "statx":  true,
+                                                                 "inotify":  true,
+                                                                 "cgroupV2":  true,
+                                                                 "systemd":  true,
+                                                                 "systemdVersion":  "systemd 255 (255.4-1ubuntu8.12)",
+                                                                 "exportableFileHandle":  true,
+                                                                 "mountIdUnique":  true
+                                                             },
+                                            "metadata":  {
+                                                             "distribution":  "Ubuntu-24.04",
+                                                             "relationship":  "hosted",
+                                                             "hostMachineId":  "machine_1",
+                                                             "kernelRelease":  "6.18.33.2-microsoft-standard-WSL2",
+                                                             "machineId":  "9bd442ff38984ccaadd4f6e3f55669f5",
+                                                             "kernelBootId":  "c435be7f-b55b-466e-b62c-71953535ee87",
+                                                             "pidNamespace":  "pid:[4026532221]",
+                                                             "initStartTicks":  "96"
+                                                         }
+                                        }
+                                    ]
+                  },
+    "probe":  {
+                  "world":  {
+                                "worldId":  "world_1",
+                                "providerKind":  "linux-wsl2",
+                                "providerKey":  "wsl:{aa957c59-794f-4ad3-ae28-9188cae51ee3}",
+                                "name":  "Ubuntu-24.04",
+                                "hostMachineId":  "machine_1",
+                                "state":  "current",
+                                "worldEpoch":  "linux_epoch_a4ea67a87225c14cba568059",
+                                "providerEpoch":  "linux_provider_5353ed5670c94bc991e6ea9a61433398",
+                                "capabilities":  {
+                                                     "pidfd":  true,
+                                                     "statx":  true,
+                                                     "inotify":  true,
+                                                     "cgroupV2":  true,
+                                                     "systemd":  true,
+                                                     "systemdVersion":  "systemd 255 (255.4-1ubuntu8.12)",
+                                                     "exportableFileHandle":  true,
+                                                     "mountIdUnique":  true
+                                                 },
+                                "metadata":  {
+                                                 "distribution":  "Ubuntu-24.04",
+                                                 "relationship":  "hosted",
+                                                 "hostMachineId":  "machine_1",
+                                                 "kernelRelease":  "6.18.33.2-microsoft-standard-WSL2",
+                                                 "machineId":  "9bd442ff38984ccaadd4f6e3f55669f5",
+                                                 "kernelBootId":  "c435be7f-b55b-466e-b62c-71953535ee87",
+                                                 "pidNamespace":  "pid:[4026532221]",
+                                                 "initStartTicks":  "96"
+                                             }
+                            },
+                  "probe":  {
+                                "providerEpoch":  "linux_provider_5353ed5670c94bc991e6ea9a61433398",
+                                "providerKey":  "wsl:{aa957c59-794f-4ad3-ae28-9188cae51ee3}",
+                                "distro":  "Ubuntu-24.04",
+                                "worldEpoch":  "linux_epoch_a4ea67a87225c14cba568059",
+                                "kernelBootId":  "c435be7f-b55b-466e-b62c-71953535ee87",
+                                "pidNamespace":  "pid:[4026532221]",
+                                "initStartTicks":  96,
+                                "kernelRelease":  "6.18.33.2-microsoft-standard-WSL2",
+                                "osPrettyName":  "Ubuntu 24.04.4 LTS",
+                                "machineId":  "9bd442ff38984ccaadd4f6e3f55669f5",
+                                "context":  {
+                                                "providerEpoch":  "linux_provider_5353ed5670c94bc991e6ea9a61433398",
+                                                "providerKey":  "wsl:{aa957c59-794f-4ad3-ae28-9188cae51ee3}",
+                                                "distro":  "Ubuntu-24.04",
+                                                "worldEpoch":  "linux_epoch_a4ea67a87225c14cba568059",
+                                                "uid":  0,
+                                                "euid":  0,
+                                                "gid":  0,
+                                                "egid":  0,
+                                                "groups":  [
+                                                               0
+                                                           ],
+                                                "cwd":  "/mnt/c/WINDOWS/system32",
+                                                "namespaces":  {
+                                                                   "pid":  "pid:[4026532221]",
+                                                                   "mount":  "mnt:[4026532219]",
+                                                                   "user":  "user:[4026531837]",
+                                                                   "cgroup":  "cgroup:[4026531835]"
+                                                               }
+                                            },
+                                "capabilities":  {
+                                                     "pidfd":  true,
+                                                     "statx":  true,
+                                                     "inotify":  true,
+                                                     "cgroupV2":  true,
+                                                     "systemd":  true,
+                                                     "systemdVersion":  "systemd 255 (255.4-1ubuntu8.12)",
+                                                     "exportableFileHandle":  true,
+                                                     "mountIdUnique":  true
+                                                 },
+                                "rootMount":  {
+                                                  "mountId":  82,
+                                                  "parentId":  67,
+                                                  "majorMinor":  "8:48",
+                                                  "root":  "/",
+                                                  "mountPoint":  "/",
+                                                  "fsType":  "ext4",
+                                                  "source":  "/dev/sdd"
+                                              },
+                                "mountCount":  34,
+                                "mounts":  [
+                                               {
+                                                   "mountId":  77,
+                                                   "parentId":  82,
+                                                   "majorMinor":  "0:31",
+                                                   "root":  "/",
+                                                   "mountPoint":  "/usr/lib/modules/6.18.33.2-microsoft-standard-WSL2",
+                                                   "fsType":  "overlay",
+                                                   "source":  "none"
+                                               },
+                                               {
+                                                   "mountId":  78,
+                                                   "parentId":  82,
+                                                   "majorMinor":  "0:34",
+                                                   "root":  "/",
+                                                   "mountPoint":  "/mnt/wsl",
+                                                   "fsType":  "tmpfs",
+                                                   "source":  "none"
+                                               },
+                                               {
+                                                   "mountId":  79,
+                                                   "parentId":  82,
+                                                   "majorMinor":  "0:36",
+                                                   "root":  "/",
+                                                   "mountPoint":  "/usr/lib/wsl/drivers",
+                                                   "fsType":  "9p",
+                                                   "source":  "drivers"
+                                               },
+                                               {
+                                                   "mountId":  82,
+                                                   "parentId":  67,
+                                                   "majorMinor":  "8:48",
+                                                   "root":  "/",
+                                                   "mountPoint":  "/",
+                                                   "fsType":  "ext4",
+                                                   "source":  "/dev/sdd"
+                                               },
+                                               {
+                                                   "mountId":  83,
+                                                   "parentId":  82,
+                                                   "majorMinor":  "0:40",
+                                                   "root":  "/",
+                                                   "mountPoint":  "/mnt/wslg",
+                                                   "fsType":  "tmpfs",
+                                                   "source":  "none"
+                                               },
+                                               {
+                                                   "mountId":  84,
+                                                   "parentId":  83,
+                                                   "majorMinor":  "8:48",
+                                                   "root":  "/",
+                                                   "mountPoint":  "/mnt/wslg/distro",
+                                                   "fsType":  "ext4",
+                                                   "source":  "/dev/sdd"
+                                               },
+                                               {
+                                                   "mountId":  110,
+                                                   "parentId":  82,
+                                                   "majorMinor":  "0:57",
+                                                   "root":  "/",
+                                                   "mountPoint":  "/usr/lib/wsl/lib",
+                                                   "fsType":  "overlay",
+                                                   "source":  "none"
+                                               },
+                                               {
+                                                   "mountId":  111,
+                                                   "parentId":  82,
+                                                   "majorMinor":  "0:2",
+                                                   "root":  "/init",
+                                                   "mountPoint":  "/init",
+                                                   "fsType":  "rootfs",
+                                                   "source":  "rootfs"
+                                               },
+                                               {
+                                                   "mountId":  112,
+                                                   "parentId":  82,
+                                                   "majorMinor":  "0:6",
+                                                   "root":  "/",
+                                                   "mountPoint":  "/dev",
+                                                   "fsType":  "devtmpfs",
+                                                   "source":  "none"
+                                               },
+                                               {
+                                                   "mountId":  113,
+                                                   "parentId":  82,
+                                                   "majorMinor":  "0:24",
+                                                   "root":  "/",
+                                                   "mountPoint":  "/sys",
+                                                   "fsType":  "sysfs",
+                                                   "source":  "sysfs"
+                                               },
+                                               {
+                                                   "mountId":  114,
+                                                   "parentId":  82,
+                                                   "majorMinor":  "0:61",
+                                                   "root":  "/",
+                                                   "mountPoint":  "/proc",
+                                                   "fsType":  "proc",
+                                                   "source":  "proc"
+                                               },
+                                               {
+                                                   "mountId":  115,
+                                                   "parentId":  112,
+                                                   "majorMinor":  "0:62",
+                                                   "root":  "/",
+                                                   "mountPoint":  "/dev/pts",
+                                                   "fsType":  "devpts",
+                                                   "source":  "devpts"
+                                               },
+                                               {
+                                                   "mountId":  116,
+                                                   "parentId":  82,
+                                                   "majorMinor":  "0:63",
+                                                   "root":  "/",
+                                                   "mountPoint":  "/run",
+                                                   "fsType":  "tmpfs",
+                                                   "source":  "none"
+                                               },
+                                               {
+                                                   "mountId":  117,
+                                                   "parentId":  116,
+                                                   "majorMinor":  "0:64",
+                                                   "root":  "/",
+                                                   "mountPoint":  "/run/lock",
+                                                   "fsType":  "tmpfs",
+                                                   "source":  "none"
+                                               },
+                                               {
+                                                   "mountId":  118,
+                                                   "parentId":  116,
+                                                   "majorMinor":  "0:65",
+                                                   "root":  "/",
+                                                   "mountPoint":  "/run/shm",
+                                                   "fsType":  "tmpfs",
+                                                   "source":  "none"
+                                               },
+                                               {
+                                                   "mountId":  119,
+                                                   "parentId":  112,
+                                                   "majorMinor":  "0:65",
+                                                   "root":  "/",
+                                                   "mountPoint":  "/dev/shm",
+                                                   "fsType":  "tmpfs",
+                                                   "source":  "none"
+                                               },
+                                               {
+                                                   "mountId":  120,
+                                                   "parentId":  116,
+                                                   "majorMinor":  "0:66",
+                                                   "root":  "/",
+                                                   "mountPoint":  "/run/user",
+                                                   "fsType":  "tmpfs",
+                                                   "source":  "none"
+                                               },
+                                               {
+                                                   "mountId":  121,
+                                                   "parentId":  114,
+                                                   "majorMinor":  "0:35",
+                                                   "root":  "/",
+                                                   "mountPoint":  "/proc/sys/fs/binfmt_misc",
+                                                   "fsType":  "binfmt_misc",
+                                                   "source":  "binfmt_misc"
+                                               },
+                                               {
+                                                   "mountId":  122,
+                                                   "parentId":  113,
+                                                   "majorMinor":  "0:25",
+                                                   "root":  "/",
+                                                   "mountPoint":  "/sys/fs/cgroup",
+                                                   "fsType":  "cgroup2",
+                                                   "source":  "cgroup2"
+                                               },
+                                               {
+                                                   "mountId":  128,
+                                                   "parentId":  83,
+                                                   "majorMinor":  "0:42",
+                                                   "root":  "/etc/versions.txt",
+                                                   "mountPoint":  "/mnt/wslg/versions.txt",
+                                                   "fsType":  "overlay",
+                                                   "source":  "none"
+                                               },
+                                               {
+                                                   "mountId":  130,
+                                                   "parentId":  83,
+                                                   "majorMinor":  "0:42",
+                                                   "root":  "/usr/share/doc",
+                                                   "mountPoint":  "/mnt/wslg/doc",
+                                                   "fsType":  "overlay",
+                                                   "source":  "none"
+                                               },
+                                               {
+                                                   "mountId":  132,
+                                                   "parentId":  82,
+                                                   "majorMinor":  "0:40",
+                                                   "root":  "/.X11-unix",
+                                                   "mountPoint":  "/tmp/.X11-unix",
+                                                   "fsType":  "tmpfs",
+                                                   "source":  "none"
+                                               },
+                                               {
+                                                   "mountId":  133,
+                                                   "parentId":  82,
+                                                   "majorMinor":  "0:71",
+                                                   "root":  "/",
+                                                   "mountPoint":  "/mnt/c",
+                                                   "fsType":  "9p",
+                                                   "source":  "C:\\"
+                                               },
+                                               {
+                                                   "mountId":  134,
+                                                   "parentId":  82,
+                                                   "majorMinor":  "0:72",
+                                                   "root":  "/",
+                                                   "mountPoint":  "/mnt/d",
+                                                   "fsType":  "9p",
+                                                   "source":  "D:\\"
+                                               },
+                                               {
+                                                   "mountId":  135,
+                                                   "parentId":  82,
+                                                   "majorMinor":  "0:73",
+                                                   "root":  "/",
+                                                   "mountPoint":  "/mnt/x",
+                                                   "fsType":  "9p",
+                                                   "source":  "X:\\"
+                                               },
+                                               {
+                                                   "mountId":  136,
+                                                   "parentId":  120,
+                                                   "majorMinor":  "0:40",
+                                                   "root":  "/run/user",
+                                                   "mountPoint":  "/run/user",
+                                                   "fsType":  "tmpfs",
+                                                   "source":  "none"
+                                               },
+                                               {
+                                                   "mountId":  137,
+                                                   "parentId":  112,
+                                                   "majorMinor":  "0:74",
+                                                   "root":  "/",
+                                                   "mountPoint":  "/dev/hugepages",
+                                                   "fsType":  "hugetlbfs",
+                                                   "source":  "hugetlbfs"
+                                               },
+                                               {
+                                                   "mountId":  138,
+                                                   "parentId":  112,
+                                                   "majorMinor":  "0:39",
+                                                   "root":  "/",
+                                                   "mountPoint":  "/dev/mqueue",
+                                                   "fsType":  "mqueue",
+                                                   "source":  "mqueue"
+                                               },
+                                               {
+                                                   "mountId":  139,
+                                                   "parentId":  113,
+                                                   "majorMinor":  "0:8",
+                                                   "root":  "/",
+                                                   "mountPoint":  "/sys/kernel/debug",
+                                                   "fsType":  "debugfs",
+                                                   "source":  "debugfs"
+                                               },
+                                               {
+                                                   "mountId":  140,
+                                                   "parentId":  113,
+                                                   "majorMinor":  "0:13",
+                                                   "root":  "/",
+                                                   "mountPoint":  "/sys/kernel/tracing",
+                                                   "fsType":  "tracefs",
+                                                   "source":  "tracefs"
+                                               },
+                                               {
+                                                   "mountId":  141,
+                                                   "parentId":  113,
+                                                   "majorMinor":  "0:75",
+                                                   "root":  "/",
+                                                   "mountPoint":  "/sys/fs/fuse/connections",
+                                                   "fsType":  "fusectl",
+                                                   "source":  "fusectl"
+                                               },
+                                               {
+                                                   "mountId":  142,
+                                                   "parentId":  113,
+                                                   "majorMinor":  "0:22",
+                                                   "root":  "/",
+                                                   "mountPoint":  "/sys/kernel/config",
+                                                   "fsType":  "configfs",
+                                                   "source":  "configfs"
+                                               },
+                                               {
+                                                   "mountId":  269,
+                                                   "parentId":  136,
+                                                   "majorMinor":  "0:85",
+                                                   "root":  "/",
+                                                   "mountPoint":  "/run/user/0",
+                                                   "fsType":  "tmpfs",
+                                                   "source":  "tmpfs"
+                                               },
+                                               {
+                                                   "mountId":  286,
+                                                   "parentId":  83,
+                                                   "majorMinor":  "0:85",
+                                                   "root":  "/",
+                                                   "mountPoint":  "/mnt/wslg/run/user/0",
+                                                   "fsType":  "tmpfs",
+                                                   "source":  "tmpfs"
+                                               }
+                                           ]
+                            }
+              },
+    "context":  {
+                    "worldId":  "world_1",
+                    "provider":  "linux-wsl2",
+                    "context":  {
+                                    "providerEpoch":  "linux_provider_5353ed5670c94bc991e6ea9a61433398",
+                                    "providerKey":  "wsl:{aa957c59-794f-4ad3-ae28-9188cae51ee3}",
+                                    "distro":  "Ubuntu-24.04",
+                                    "worldEpoch":  "linux_epoch_a4ea67a87225c14cba568059",
+                                    "uid":  0,
+                                    "euid":  0,
+                                    "gid":  0,
+                                    "egid":  0,
+                                    "groups":  [
+                                                   0
+                                               ],
+                                    "cwd":  "/mnt/c/WINDOWS/system32",
+                                    "namespaces":  {
+                                                       "pid":  "pid:[4026532221]",
+                                                       "mount":  "mnt:[4026532219]",
+                                                       "user":  "user:[4026531837]",
+                                                       "cgroup":  "cgroup:[4026531835]"
+                                                   }
+                                }
+                },
+    "machine":  {
+                    "machineId":  "machine_1",
+                    "machineUuid":  "3563f893-a0f4-49e6-99df-2808fc306a74",
+                    "computer":  "STEALTHEYELLC",
+                    "bootEpoch":  "boot_1",
+                    "nativeBootId":  10,
+                    "kernelEpoch":  "kernel_1",
+                    "powerShellProviderEpoch":  "provider_1",
+                    "session":  {
+                                    "id":  "session_1",
+                                    "sessionId":  1,
+                                    "user":  "StealthEye",
+                                    "domain":  "STEALTHEYELLC",
+                                    "state":  "active",
+                                    "isInteractive":  true
+                                },
+                    "volumes":  [
+                                    {
+                                        "id":  "vol_1",
+                                        "drive":  "C:",
+                                        "volumeGuid":  "\\\\?\\Volume{335e3e32-21e3-4c09-bfd3-d30ee5407ca7}\\",
+                                        "fileSystem":  "NTFS",
+                                        "serial":  3369807313,
+                                        "totalBytes":  700747608064,
+                                        "freeBytes":  553146675200
+                                    },
+                                    {
+                                        "id":  "vol_2",
+                                        "drive":  "X:",
+                                        "volumeGuid":  "\\\\?\\Volume{e652f31f-ce3d-45ce-a83f-91e3e5f1d9f3}\\",
+                                        "fileSystem":  "ReFS",
+                                        "serial":  2054571107,
+                                        "totalBytes":  322122547200,
+                                        "freeBytes":  313646321664
+                                    }
+                                ],
+                    "worldCursor":  184
+                },
+    "health":  {
+                   "database":  "C:\\SHELLeye\\state\\build002-run004\\shelleye.db",
+                   "quickCheck":  "ok",
+                   "journalMode":  "wal",
+                   "cursor":  184
+               },
+    "raw":  {
+                "osRelease":  "PRETTY_NAME=\"Ubuntu 24.04.4 LTS\"\r\nNAME=\"Ubuntu\"\r\nVERSION_ID=\"24.04\"\r\nVERSION=\"24.04.4 LTS (Noble Numbat)\"\r\nVERSION_CODENAME=noble\r\nID=ubuntu\r\nID_LIKE=debian\r\nHOME_URL=\"https://www.ubuntu.com/\"\r\nSUPPORT_URL=\"https://help.ubuntu.com/\"\r\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\r\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\r\nUBUNTU_CODENAME=noble\r\nLOGO=ubuntu-logo",
+                "kernelRelease":  "6.18.33.2-microsoft-standard-WSL2",
+                "machineId":  "9bd442ff38984ccaadd4f6e3f55669f5",
+                "kernelBootId":  "c435be7f-b55b-466e-b62c-71953535ee87",
+                "pidNamespace":  "pid:[4026532221]",
+                "initStartTicks":  "96",
+                "identity":  "uid=0(root) gid=0(root) groups=0(root)",
+                "rootMount":  "/      /dev/sdd ext4   rw,relatime,discard,errors=remount-ro,data=ordered",
+                "tmpMount":  "/      /dev/sdd ext4   rw,relatime,discard,errors=remount-ro,data=ordered",
+                "systemdState":  "running",
+                "systemdVersion":  "systemd 255 (255.4-1ubuntu8.12)",
+                "cgroupVersion":  "v2",
+                "cgroupMount":  "/sys/fs/cgroup cgroup2 cgroup2 rw,nosuid,nodev,noexec,relatime,nsdelegate"
+            }
+}
