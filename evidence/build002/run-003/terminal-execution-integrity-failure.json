@@ -1,0 +1,52 @@
+﻿{
+    "classification":  "MEASURED RUN 003 TERMINAL EXECUTION-INTEGRITY FAILURE",
+    "run":  "Run 003",
+    "status":  "FAILED / ENDED",
+    "freezeCommit":  "122eaceeec0bde5777228ceef12a2b8fc445b9f9",
+    "implementationCommit":  "6bb4806a64e27b82e7e664f6ad915364fe8d99b6",
+    "lastProviderEvidenceCommit":  "e7320e7ef115a14bb5f56668da4c1db3db19d52b",
+    "failedGate":  "L3 kernel/provider recovery",
+    "productFailureAdjudication":  "NOT ESTABLISHED",
+    "executionIntegrityFailure":  true,
+    "reason":  "The serialized L3 native-gap measurement wrapper used a PowerShell parameter named $args and splatted @args. The spawned observer was wsl.exe ... --exec /bin/cat with no pathname argument, so /bin/cat waited on stdin and the native-gap observation never completed. The frozen 180-second Linux workload later expired before a valid recovery measurement could be made.",
+    "officialL3Prepare":  {
+                              "passed":  true,
+                              "atUtc":  "2026-08-12T16:28:48.548Z",
+                              "linuxWorldEpoch":  "linux_epoch_0c6fc9e8023c13b8359a0725",
+                              "processId":  "proc_797",
+                              "pid":  9514,
+                              "startTicks":  "89580",
+                              "fileId":  "file_14",
+                              "filePath":  "/tmp/shelleye-build002-recovery-1786552128414.txt",
+                              "strongGapHandle":  true
+                          },
+    "instrumentation":  {
+                            "problematicFunction":  "function W([string]$exe,[string[]]$args){ ... --exec $exe @args ... }",
+                            "observedStuckWindowsProcess":  "wsl.exe --distribution Ubuntu-24.04 --user root --exec /bin/cat",
+                            "firstGapTaskRunUtc":  "2026-08-12T16:25:05Z",
+                            "firstGapArtifactProduced":  false,
+                            "diagnosticCorrection":  "Renamed the wrapper parameter from $args to $argv after no gap result existed; retry returned exit 1 and still produced no gap artifact."
+                        },
+    "terminalObservation":  {
+                                "capturedUtc":  "2026-08-12T16:28:26.6927188+00:00",
+                                "elapsedFromPrepareSeconds":  -21.855,
+                                "frozenWorkloadSeconds":  180,
+                                "bootId":  "b4c9749a-e805-4b43-b022-57448bd8f6a6",
+                                "pidNamespace":  "pid:[4026532221]",
+                                "initStartTicks":  "89",
+                                "processPresent":  false,
+                                "filePresent":  true,
+                                "sameDistroIncarnationAsFreeze":  true
+                            },
+    "invalidParallelObservation":  {
+                                       "classification":  "EXCLUDED",
+                                       "atUtc":  "2026-08-12T16:24:24.3134261+00:00",
+                                       "description":  "A separate colliding L3 prepare attempt connected after the serialized driver had already killed the kernel and returned pipe ENOENT. It is not counted as the measured L3 result."
+                                   },
+    "downstreamAuthorization":  {
+                                    "L4":  "NOT RUN",
+                                    "docs14":  "NOT AUTHORIZED",
+                                    "mainPromotion":  "NOT AUTHORIZED",
+                                    "sourceRepairDuringRun003":  "NONE"
+                                }
+}

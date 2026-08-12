@@ -1,0 +1,36 @@
+﻿{
+    "classification":  "MEASURED RUN 003 TERMINAL OBSERVATION",
+    "freezeCommit":  "122eaceeec0bde5777228ceef12a2b8fc445b9f9",
+    "implementationCommit":  "6bb4806a64e27b82e7e664f6ad915364fe8d99b6",
+    "whoami":  "stealtheyellc\\stealtheye",
+    "session":  1,
+    "capturedUtc":  "2026-08-12T16:28:26.6927188+00:00",
+    "bootId":  {
+                   "exitCode":  0,
+                   "stdout":  "b4c9749a-e805-4b43-b022-57448bd8f6a6"
+               },
+    "pidNamespace":  {
+                         "exitCode":  0,
+                         "stdout":  "pid:[4026532221]"
+                     },
+    "initStartTicks":  {
+                           "exitCode":  0,
+                           "stdout":  "89"
+                       },
+    "process":  {
+                    "exitCode":  1,
+                    "stdout":  ""
+                },
+    "file":  {
+                 "exitCode":  0,
+                 "stdout":  ""
+             },
+    "anchorRecord":  {
+                         "pid":  79468,
+                         "startTimeUtcTicks":  639221480989521559,
+                         "executable":  "C:\\Program Files\\WSL\\wsl.exe",
+                         "distro":  "Ubuntu-24.04",
+                         "providerKey":  "wsl:{aa957c59-794f-4ad3-ae28-9188cae51ee3}",
+                         "createdUtc":  "2026-08-12T16:14:59.2808058+00:00"
+                     }
+}

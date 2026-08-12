@@ -1,0 +1,16 @@
+﻿# SHELLeye Build 002 - Run 003 Terminal Execution-Integrity Failure
+
+**Status:** FAILED / ENDED  
+**Freeze:** 122eaceeec0bde5777228ceef12a2b8fc445b9f9  
+**Implementation:** 6bb4806a64e27b82e7e664f6ad915364fe8d99b6  
+**Last successful measured evidence commit:** e7320e7ef115a14bb5f56668da4c1db3db19d52b
+
+Run 003 is ended at measured L3. L1 and the one-invocation Program Host gate passed and remain authoritative. The official L3 prepare also passed, freezing $(@{phase=prepare; atUtc=2026-08-12T16:28:48.548Z; windowsBootEpoch=boot_1; linuxWorldId=world_1; linuxWorldEpoch=linux_epoch_0c6fc9e8023c13b8359a0725; processId=proc_797; pid=9514; startTicks=89580; fileId=file_14; filePath=/tmp/shelleye-build002-recovery-1786552128414.txt; fileIdentity=; strongGapHandle=True; cursor=1682}.processId) / PID $(@{phase=prepare; atUtc=2026-08-12T16:28:48.548Z; windowsBootEpoch=boot_1; linuxWorldId=world_1; linuxWorldEpoch=linux_epoch_0c6fc9e8023c13b8359a0725; processId=proc_797; pid=9514; startTicks=89580; fileId=file_14; filePath=/tmp/shelleye-build002-recovery-1786552128414.txt; fileIdentity=; strongGapHandle=True; cursor=1682}.pid) / start ticks $(@{phase=prepare; atUtc=2026-08-12T16:28:48.548Z; windowsBootEpoch=boot_1; linuxWorldId=world_1; linuxWorldEpoch=linux_epoch_0c6fc9e8023c13b8359a0725; processId=proc_797; pid=9514; startTicks=89580; fileId=file_14; filePath=/tmp/shelleye-build002-recovery-1786552128414.txt; fileIdentity=; strongGapHandle=True; cursor=1682}.startTicks) and strong-handle file $(@{phase=prepare; atUtc=2026-08-12T16:28:48.548Z; windowsBootEpoch=boot_1; linuxWorldId=world_1; linuxWorldEpoch=linux_epoch_0c6fc9e8023c13b8359a0725; processId=proc_797; pid=9514; startTicks=89580; fileId=file_14; filePath=/tmp/shelleye-build002-recovery-1786552128414.txt; fileIdentity=; strongGapHandle=True; cursor=1682}.fileId).
+
+The L3 native-gap observation did not complete because its execution wrapper declared a PowerShell parameter named `` and then splatted `@args`. The observed child was `wsl.exe ... --exec /bin/cat` with no pathname argument, so `/bin/cat` waited on stdin. No native-gap result was produced. After diagnosis, the wrapper-only correction could no longer rescue the preregistered gate: the frozen workload was `sleep 180` and had expired before a valid recovery measurement.
+
+The terminal owner-context observation shows the WSL provider remained the same native incarnation (boot ID 4c9749a-e805-4b43-b022-57448bd8f6a6, PID namespace pid:[4026532221], PID-1 start ticks 89); the retained file remained present, while PID $(@{phase=prepare; atUtc=2026-08-12T16:28:48.548Z; windowsBootEpoch=boot_1; linuxWorldId=world_1; linuxWorldEpoch=linux_epoch_0c6fc9e8023c13b8359a0725; processId=proc_797; pid=9514; startTicks=89580; fileId=file_14; filePath=/tmp/shelleye-build002-recovery-1786552128414.txt; fileIdentity=; strongGapHandle=True; cursor=1682}.pid) was gone. Therefore this record does **not** establish a provider identity failure. It establishes a measured execution-integrity failure.
+
+A separate pipe-ENOENT observation at 16:24:24Z is explicitly excluded because it collided after the serialized L3 driver had already killed the kernel.
+
+No L4 was run after this terminal classification. docs/14-BUILD-002-RESULTS.md remains unauthorized and absent. Main promotion remains unauthorized.

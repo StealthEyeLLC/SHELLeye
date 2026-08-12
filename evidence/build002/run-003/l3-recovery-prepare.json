@@ -1,0 +1,21 @@
+{
+  "phase": "prepare",
+  "atUtc": "2026-08-12T16:28:48.548Z",
+  "windowsBootEpoch": "boot_1",
+  "linuxWorldId": "world_1",
+  "linuxWorldEpoch": "linux_epoch_0c6fc9e8023c13b8359a0725",
+  "processId": "proc_797",
+  "pid": 9514,
+  "startTicks": "89580",
+  "fileId": "file_14",
+  "filePath": "/tmp/shelleye-build002-recovery-1786552128414.txt",
+  "fileIdentity": {
+    "devMajor": 8,
+    "devMinor": 48,
+    "inode": "50230",
+    "mountId": "2147483731",
+    "uniqueMountId": true
+  },
+  "strongGapHandle": true,
+  "cursor": 1682
+}
