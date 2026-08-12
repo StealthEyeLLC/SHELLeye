@@ -9,7 +9,8 @@ public static partial class WindowsNative
     private const uint GENERIC_WRITE=0x40000000, FILE_READ_ATTRIBUTES=0x80, DELETE_ACCESS=0x00010000;
     private const uint CREATE_ALWAYS=2, FILE_FLAG_BACKUP_SEMANTICS=0x02000000;
     private const uint FILE_BEGIN=0;
-    private const int FileBasicInfo=0, FileRenameInfo=3, FileDispositionInfo=4, FileIdInfo=18;
+    private const int FileBasicInfo=0, FileRenameInfo=3, FileDispositionInfo=4, FileIdInfo=18, FileDispositionInfoEx=21;
+    private const uint FILE_DISPOSITION_DELETE=0x00000001, FILE_DISPOSITION_POSIX_SEMANTICS=0x00000002;
     public const uint FSCTL_READ_FILE_USN_DATA=0x000900eb, FSCTL_QUERY_USN_JOURNAL=0x000900f4;
     [StructLayout(LayoutKind.Sequential)] private struct FILE_BASIC_INFO { public long CreationTime,LastAccessTime,LastWriteTime,ChangeTime; public uint FileAttributes; }
 
@@ -110,7 +111,19 @@ public static partial class WindowsNative
 
     public static void DeleteVerifiedFile(FileConcept file,string? expectedRevision=null)
     {
-        using var vh=OpenVerifiedFile(file,true,expectedRevision);IntPtr p=Marshal.AllocHGlobal(1);try{Marshal.WriteByte(p,1);if(!SetFileInformationByHandle(vh.Handle,FileDispositionInfo,p,1))throw Win32("native_error","SetFileInformationByHandle(FileDispositionInfo) failed.");}finally{Marshal.FreeHGlobal(p);}
+        using var vh=OpenVerifiedFile(file,true,expectedRevision);
+        if(!String.Equals(file.Kind,"dir",StringComparison.Ordinal))
+        {
+            IntPtr ex=Marshal.AllocHGlobal(sizeof(uint));
+            try
+            {
+                Marshal.WriteInt32(ex,unchecked((int)(FILE_DISPOSITION_DELETE|FILE_DISPOSITION_POSIX_SEMANTICS)));
+                if(SetFileInformationByHandle(vh.Handle,FileDispositionInfoEx,ex,sizeof(uint)))return;
+                int error=Marshal.GetLastWin32Error();if(error is not (1 or 50 or 87))throw new ShellEyeException("native_error","SetFileInformationByHandle(FileDispositionInfoEx) failed.",error);
+            }
+            finally{Marshal.FreeHGlobal(ex);}
+        }
+        IntPtr p=Marshal.AllocHGlobal(1);try{Marshal.WriteByte(p,1);if(!SetFileInformationByHandle(vh.Handle,FileDispositionInfo,p,1))throw Win32("native_error","SetFileInformationByHandle(FileDispositionInfo) failed.");}finally{Marshal.FreeHGlobal(p);}
     }
 
     public static FileContinuity QueryFileContinuity(string path)

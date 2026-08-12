@@ -54,7 +54,7 @@ public sealed class LinuxWslProvider : IDisposable
             {
                 string code=error.TryGetProperty("code",out var c)?c.GetString()??"native_error":"native_error";
                 string message=error.TryGetProperty("message",out var m)?m.GetString()??"Linux provider operation failed.":"Linux provider operation failed.";
-                int? native=error.TryGetProperty("nativeCode",out var n)&&n.TryGetInt32(out int ni)?ni:null;
+                int? native=error.TryGetProperty("nativeCode",out var n)&&n.ValueKind==JsonValueKind.Number&&n.TryGetInt32(out int ni)?ni:null;
                 object? details=error.TryGetProperty("details",out var d)&&d.ValueKind!=JsonValueKind.Null?d.Clone():null;
                 throw new ShellEyeException(code,message,native,details);
             }

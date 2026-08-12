@@ -46,10 +46,10 @@ internal static unsafe class LinuxNative
     }
     internal sealed class VerifiedPidfd:IDisposable{public int Fd{get;}public ProcInfo Process{get;}public VerifiedPidfd(int fd,ProcInfo p){Fd=fd;Process=p;}public void Dispose(){if(Fd>=0)close(Fd);}}
     internal static bool IsPidfdExited(int fd){var f=new[]{new PollFd{fd=fd,events=POLLIN}};int rc=poll(f,1,0);if(rc<0)throw new ProviderException("native_error","poll(pidfd) failed",Errno);return rc>0&&f[0].revents!=0;}
-    internal static VerifiedPidfd OpenVerifiedPidfd(int pid,ulong? expected)
+    internal static VerifiedPidfd OpenVerifiedPidfd(int pid,ulong? expected,bool allowExited=false)
     {
         int fd;try{fd=pidfd_open(pid,0);}catch(EntryPointNotFoundException e){throw new ProviderException("unsupported_by_provider","pidfd_open is unavailable.",inner:e);}if(fd<0){int e=Errno;if(e is 2 or 3)throw new ProviderException("destroyed","Process is gone.",e);if(e is 1 or 13)throw new ProviderException("permission_denied","pidfd_open permission denied.",e);throw new ProviderException("native_error","pidfd_open failed.",e);}
-        try{if(IsPidfdExited(fd))throw new ProviderException("destroyed","Process already exited.");var p=ReadProc(pid);if(IsPidfdExited(fd))throw new ProviderException("destroyed","Process exited during verification.");if(expected.HasValue&&p.StartTicks!=expected.Value)throw new ProviderException("stale","PID now refers to a different process lifetime.",details:new{pid,expectedStartTicks=expected,currentStartTicks=p.StartTicks});return new(fd,p);}catch{close(fd);throw;}
+        try{if(!allowExited&&IsPidfdExited(fd))throw new ProviderException("destroyed","Process already exited.");var p=ReadProc(pid);if(!allowExited&&IsPidfdExited(fd))throw new ProviderException("destroyed","Process exited during verification.");if(expected.HasValue&&p.StartTicks!=expected.Value)throw new ProviderException("stale","PID now refers to a different process lifetime.",details:new{pid,expectedStartTicks=expected,currentStartTicks=p.StartTicks});return new(fd,p);}catch{close(fd);throw;}
     }
     internal static bool WaitPidfd(int fd,int timeoutMs){var f=new[]{new PollFd{fd=fd,events=POLLIN}};int rc=poll(f,1,timeoutMs);if(rc<0)throw new ProviderException("native_error","poll(pidfd) failed",Errno);return rc>0&&f[0].revents!=0;}
     internal sealed record StatWitness(uint Mask,uint DevMajor,uint DevMinor,ulong Inode,ulong MountId,bool UniqueMountId,ulong Size,long MTimeNs,long CTimeNs,long? BTimeNs,uint Mode,uint Uid,uint Gid);
