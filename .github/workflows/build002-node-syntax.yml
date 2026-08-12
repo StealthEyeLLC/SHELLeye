@@ -1,0 +1,22 @@
+name: Build 002 node syntax verification
+on:
+  push:
+    branches: [build002-verification-probe]
+permissions:
+  contents: read
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check frozen JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --version
+          node --check program-host/sdk/index.js
+          node --check program-host/src/build002-acceptance.js
+          node --check tests/acceptance/build002-linux-pid-reuse-stress.js
+          node --check tests/acceptance/build002-recovery-prepare.js
+          node --check tests/acceptance/build002-recovery-recover.js
+          node --check tests/acceptance/build002-distro-restart.js
