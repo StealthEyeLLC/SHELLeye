@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "atUtc": "2026-08-12T13:38:25.687Z",
+  "iterations": 256,
+  "reuseObserved": 0,
+  "wrongRebound": 0,
+  "falseProcessRebounds": 0,
+  "note": "real PID reuse is best-effort; deterministic start-time/epoch rejection is covered by provider-contract tests"
+}
