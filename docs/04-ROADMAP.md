@@ -1,7 +1,7 @@
 # 04 — Roadmap
 
-Status: **Canonical direction; post-Build-001 sequencing remains evidence-driven**  
-Baseline: **2026-08-08**
+Status: **Canonical direction; Build 002 measured complete; later sequencing remains evidence-driven**
+Baseline: **2026-08-12**
 
 ## Governing rule
 
@@ -145,8 +145,14 @@ Only reconsider after measured evidence:
 
 Each must earn itself through a capability impossible or materially weaker through supported user-mode interfaces.
 
-## Build 001 completion status
+## Measured completion status
 
 **Build 001 — Machine World Kernel Slice: COMPLETE / MEASURED (2026-08-08).**
 
-Milestones A, B, C, and D all passed their canonical gates. Build 002 has not begun. Future sequencing remains evidence-driven from the measured Build 001 substrate.
+Milestones A, B, C, and D all passed their canonical gates.
+
+**Build 002 — Provider Neutrality Pressure Test: COMPLETE / MEASURED / PASSED (2026-08-12).**
+
+Final classification: **PASS — provider-neutral spine survived with Windows depth preserved.** Windows remained deep and exact while Ubuntu-24.04 WSL2 proved the provider-qualified machine-world, process, file, recovery, distro-incarnation, delta, and Program Host contracts on a materially different provider. Canonical evidence is in `docs/14-BUILD-002-RESULTS.md`.
+
+Build 003 remains a roadmap candidate only. **Build 003 implementation is not authorized by this status update.** Future sequencing remains evidence-driven from the measured Build 001 + Build 002 substrate.

@@ -1,10 +1,10 @@
 # SHELLeye
 
-Status: **BUILD 001 IMPLEMENTED / MEASURED / COMPLETE — Machine World Kernel Slice**
+Status: **BUILD 002 IMPLEMENTED / MEASURED / COMPLETE — Provider Neutrality Pressure Test**
 Owner: **StealthEyeLLC**  
 Primary operator: **ChatGPT**  
 Initial target: **STEALTHEYELLC / Windows 11 x64**  
-Canonical baseline: **2026-08-08**
+Canonical baseline: **2026-08-12**
 
 SHELLeye is a **persistent, programmable machine world designed for ChatGPT as the operator**. It is not a human shell, terminal replacement, PowerShell GUI, SSH client, conventional orchestration dashboard, or DevOps product whose main interface is intended for manual reading.
 
@@ -74,6 +74,13 @@ It has four hard gates:
    One Node Program Host invocation performs at least 30 meaningful machine operations across process, job, file, listener, service, resource, output, PowerShell, wait, and delta surfaces with no model round trip between primitives.
 
 The exact executable slice and acceptance workflow are canonicalized in [`docs/02-BUILD-001-SLICE.md`](docs/02-BUILD-001-SLICE.md).
+## Build 002 — Provider Neutrality Pressure Test
+
+Build 002 is **complete / measured / passed**. It proved that the SHELLeye spine can remain exact across materially different Windows and Linux/WSL2 providers without flattening provider-native identity semantics or weakening the measured Build 001 Windows provider.
+
+The final classification is **PASS — provider-neutral spine survived with Windows depth preserved**. Canonical measured evidence is recorded in [`docs/14-BUILD-002-RESULTS.md`](docs/14-BUILD-002-RESULTS.md); the operative final measured freeze is [`docs/13-BUILD-002-ACCEPTANCE-FREEZE.md`](docs/13-BUILD-002-ACCEPTANCE-FREEZE.md).
+
+Build 003 is **not authorized by Build 002 completion**. Subsequent sequencing remains separately evidence-driven.
 
 ## Canonical documents
 
@@ -90,7 +97,7 @@ Read in order:
 9. [`docs/08-WORKFLOW-PRESSURE-TESTS.md`](docs/08-WORKFLOW-PRESSURE-TESTS.md)
 10. [`docs/AUTHORITY.md`](docs/AUTHORITY.md)
 
-Do not create `09-BUILD-001-RESULTS.md` until Build 001 has actually run.
+Measured results are canonicalized in `docs/09-BUILD-001-RESULTS.md` for Build 001 and `docs/14-BUILD-002-RESULTS.md` for Build 002. Build 003 remains unimplemented and unauthorized.
 
 ## Planned implementation shape
 
