@@ -1,0 +1,34 @@
+name: Build 002 exact registry fetch fallback
+on:
+  push:
+    branches: [build002-publication-probe]
+    paths:
+      - .build002-transfer/assemble-registry-fallback.trigger
+permissions:
+  contents: write
+jobs:
+  fetch_exact:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fetch, verify, and publish exact registry blob
+        shell: bash
+        run: |
+          set -euo pipefail
+          target='702b54d25b24ca7815e6dc8736e752a227a23b43'
+          path='src/SHELLeye.Kernel/LinuxProviderRegistry.cs'
+          curl -fsS 'https://sezu.stealtheye.net/__build002_5fae33066a28efb18d40eab0a9b6f04336ffc3f34ac71944/registry.blob' -o "$path"
+          actual="$(git hash-object "$path")"
+          test "$actual" = "$target"
+          git config user.name "StealthEyeLLC Build 002 Assembler"
+          git config user.email "actions@users.noreply.github.com"
+          git add "$path"
+          git commit -m "Assemble exact Build 002 Linux registry blob"
+          git pull --rebase origin build002-publication-probe || true
+          if test "$(git hash-object "$path")" = "$target"; then
+            git push || { git fetch origin build002-publication-probe; test "$(git show origin/build002-publication-probe:$path | git hash-object --stdin)" = "$target"; }
+          else
+            exit 1
+          fi
