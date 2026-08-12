@@ -1,8 +1,10 @@
-<Solution>
+﻿<Solution>
   <Folder Name="/src/">
     <Project Path="src/SHELLeye.Kernel/SHELLeye.Kernel.csproj" />
+    <Project Path="src/SHELLeye.Platform.Linux/SHELLeye.Platform.Linux.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/SHELLeye.Tests/SHELLeye.Tests.csproj" />
+    <Project Path="tests/SHELLeye.ProviderContract.Tests/SHELLeye.ProviderContract.Tests.csproj" />
   </Folder>
 </Solution>

@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.Sqlite;
+using Microsoft.Data.Sqlite;
 using System.Text.Json;
 
 namespace SHELLeye;
@@ -42,6 +42,11 @@ CREATE TABLE IF NOT EXISTS listeners(id TEXT PRIMARY KEY, af TEXT NOT NULL, addr
 CREATE TABLE IF NOT EXISTS spools(job_id TEXT NOT NULL, process_id TEXT NOT NULL, stream TEXT NOT NULL, path TEXT NOT NULL, completed INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(job_id,process_id,stream));
 CREATE TABLE IF NOT EXISTS deltas(seq INTEGER PRIMARY KEY AUTOINCREMENT, type TEXT NOT NULL, concept_id TEXT, payload_json TEXT NOT NULL, at_utc TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS runtime(key TEXT PRIMARY KEY, value TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS provider_worlds(world_id TEXT PRIMARY KEY,provider_kind TEXT NOT NULL,provider_key TEXT NOT NULL UNIQUE,name TEXT NOT NULL,host_machine_id TEXT,state TEXT NOT NULL,world_epoch TEXT,provider_epoch TEXT,capabilities_json TEXT,metadata_json TEXT,last_error TEXT,updated_utc TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS linux_processes(id TEXT PRIMARY KEY,world_id TEXT NOT NULL,world_epoch TEXT NOT NULL,pid INTEGER NOT NULL,start_ticks TEXT NOT NULL,parent_pid INTEGER NOT NULL,name TEXT NOT NULL,executable_path TEXT,state TEXT NOT NULL,parent_quality TEXT NOT NULL,parent_id TEXT,updated_utc TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS ix_linux_process_native ON linux_processes(world_id,world_epoch,pid,start_ticks);
+CREATE TABLE IF NOT EXISTS linux_files(id TEXT PRIMARY KEY,world_id TEXT NOT NULL,world_epoch TEXT NOT NULL,kind TEXT NOT NULL,path TEXT NOT NULL,dev_major INTEGER NOT NULL,dev_minor INTEGER NOT NULL,inode TEXT NOT NULL,mount_id TEXT NOT NULL,unique_mount_id INTEGER NOT NULL,revision TEXT NOT NULL,handle_type INTEGER,handle_b64 TEXT,handle_mount_id INTEGER,helper_token TEXT,provider_epoch TEXT,state TEXT NOT NULL,updated_utc TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS ix_linux_file_native ON linux_files(world_id,world_epoch,dev_major,dev_minor,inode,mount_id);
 ";
             c.ExecuteNonQuery();
         }
@@ -100,4 +105,3 @@ CREATE TABLE IF NOT EXISTS runtime(key TEXT PRIMARY KEY, value TEXT NOT NULL);
     public string IntegrityCheck(){lock(_gate){using var c=_db.CreateCommand();c.CommandText="PRAGMA quick_check";return (string)c.ExecuteScalar()!;}}
     public void Dispose()=>_db.Dispose();
 }
-

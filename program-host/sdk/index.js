@@ -1,9 +1,37 @@
-﻿const {ShellEyeClient}=require('./client');
+const {ShellEyeClient}=require('./client');
 function sdk(c){const q=(m,p,t)=>c.request(m,p,t);return{
- rpc:{hello:()=>q('rpc.hello')},machine:{inspect:()=>q('machine.inspect')},session:{inspect:()=>q('session.inspect')},volume:{inspect:drive=>q('volume.inspect',{drive})},
- process:{retain:pid=>q('process.retain',{pid}),inspect:id=>q('process.inspect',{processId:id}),resources:id=>q('process.resources',{processId:id}),start:(executable,args=[],cwd)=>q('process.start',{executable,args,cwd}),wait:(id,timeoutMs=30000)=>q('process.wait',{processId:id,timeoutMs},timeoutMs),result:(id,timeoutMs=30000)=>q('process.result',{processId:id,timeoutMs},timeoutMs),terminate:id=>q('process.terminate',{processId:id})},
+ rpc:{hello:()=>q('rpc.hello')},
+ machine:{inspect:()=>q('machine.inspect')},
+ provider:{probe:()=>q('provider.probe'),context:()=>q('provider.context')},
+ session:{inspect:()=>q('session.inspect')},
+ volume:{inspect:drive=>q('volume.inspect',{drive})},
+ process:{
+  retain:(pid,worldId=null)=>q('process.retain',{pid,...(worldId?{worldId}:{})}),
+  inspect:id=>q('process.inspect',{processId:id}),
+  resources:id=>q('process.resources',{processId:id}),
+  start:(executable,args=[],cwd=null,worldId=null,environment=null)=>q('process.start',{executable,args,...(cwd?{cwd}:{}),...(worldId?{worldId}:{}),...(environment?{environment}:{})}),
+  wait:(id,timeoutMs=30000)=>q('process.wait',{processId:id,timeoutMs},timeoutMs),
+  result:(id,timeoutMs=30000)=>q('process.result',{processId:id,timeoutMs},timeoutMs),
+  terminate:id=>q('process.terminate',{processId:id})
+ },
  job:{create:()=>q('job.create'),inspect:id=>q('job.inspect',{jobId:id}),start:(id,executable,args,cwd)=>q('job.start',{jobId:id,executable,args,cwd}),members:id=>q('job.members',{jobId:id}),waitMembers:(id,atLeast,timeoutMs=30000)=>q('job.wait_member_count',{jobId:id,atLeast,timeoutMs},timeoutMs),terminate:id=>q('job.terminate',{jobId:id}),waitEmpty:(id,timeoutMs=30000)=>q('job.wait_empty',{jobId:id,timeoutMs},timeoutMs),output:(id,afterCursor=null,maxBytes=65536)=>q('job.output',{jobId:id,afterCursor,maxBytes}),waitOutput:(id,contains,afterCursor=null,timeoutMs=30000)=>q('job.wait_output',{jobId:id,contains,afterCursor,timeoutMs},timeoutMs)},
- directory:{create:path=>q('directory.create',{path}),list:id=>q('directory.list',{directoryId:id})},file:{create:(path,content='')=>q('file.create',{path,content}),retain:path=>q('file.retain',{path}),inspect:id=>q('file.inspect',{fileId:id}),read:id=>q('file.read',{fileId:id}),write:(id,content,expectedRevision)=>q('file.write',{fileId:id,content,expectedRevision}),rename:(id,newPath)=>q('file.rename',{fileId:id,newPath}),delete:id=>q('file.delete',{fileId:id}),hardlink:(id,newPath)=>q('file.hardlink',{fileId:id,newPath}),waitChange:(id,baselineRevision,timeoutMs=30000)=>q('file.wait_change',{fileId:id,baselineRevision,timeoutMs},timeoutMs)},
- network:{retainListener:(address,port,ownerProcessId)=>q('network.retain_listener',{address,port,ownerProcessId}),waitListener:(address,port,ownerProcessId,timeoutMs=30000)=>q('network.wait_listener',{address,port,ownerProcessId,timeoutMs},timeoutMs),waitAbsent:(address,port,listenerId,timeoutMs=30000)=>q('network.wait_absent',{address,port,listenerId,timeoutMs},timeoutMs)},listener:{inspect:id=>q('listener.inspect',{listenerId:id})},service:{inspect:name=>q('service.inspect',{name})},powershell:{invoke:(command,parameters={},properties=null)=>q('powershell.invoke',{command,parameters,properties})},world:{cursor:()=>q('world.cursor'),delta:(afterCursor=0,limit=200)=>q('world.delta',{afterCursor,limit}),sync:()=>q('world.sync')},state:{health:()=>q('state.health')}
+ directory:{create:(path,worldId=null)=>q('directory.create',{path,...(worldId?{worldId}:{})}),list:id=>q('directory.list',{directoryId:id})},
+ file:{
+  create:(path,content='',worldId=null)=>q('file.create',{path,content,...(worldId?{worldId}:{})}),
+  retain:(path,worldId=null)=>q('file.retain',{path,...(worldId?{worldId}:{})}),
+  inspect:id=>q('file.inspect',{fileId:id}),
+  read:id=>q('file.read',{fileId:id}),
+  write:(id,content,expectedRevision)=>q('file.write',{fileId:id,content,expectedRevision}),
+  rename:(id,newPath)=>q('file.rename',{fileId:id,newPath}),
+  delete:id=>q('file.delete',{fileId:id}),
+  hardlink:(id,newPath)=>q('file.hardlink',{fileId:id,newPath}),
+  waitChange:(id,baselineRevision,timeoutMs=30000)=>q('file.wait_change',{fileId:id,baselineRevision,timeoutMs},timeoutMs)
+ },
+ network:{retainListener:(address,port,ownerProcessId)=>q('network.retain_listener',{address,port,ownerProcessId}),waitListener:(address,port,ownerProcessId,timeoutMs=30000)=>q('network.wait_listener',{address,port,ownerProcessId,timeoutMs},timeoutMs),waitAbsent:(address,port,listenerId,timeoutMs=30000)=>q('network.wait_absent',{address,port,listenerId,timeoutMs},timeoutMs)},
+ listener:{inspect:id=>q('listener.inspect',{listenerId:id})},
+ service:{inspect:name=>q('service.inspect',{name})},
+ powershell:{invoke:(command,parameters={},properties=null)=>q('powershell.invoke',{command,parameters,properties})},
+ world:{providers:()=>q('world.providers'),cursor:()=>q('world.cursor'),delta:(afterCursor=0,limit=200)=>q('world.delta',{afterCursor,limit}),sync:()=>q('world.sync')},
+ state:{health:()=>q('state.health')}
 };}
 module.exports={ShellEyeClient,sdk};
