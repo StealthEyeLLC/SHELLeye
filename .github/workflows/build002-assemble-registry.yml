@@ -13,12 +13,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Fetch and verify exact registry blob
+      - name: Assemble and verify exact registry blob
         shell: bash
         run: |
           set -euo pipefail
-          curl -fsS 'https://sezu.stealtheye.net/__build002_5fae33066a28efb18d40eab0a9b6f04336ffc3f34ac71944/registry.blob' -o src/SHELLeye.Kernel/LinuxProviderRegistry.cs
+          cat .build002-transfer/registry.{0..9}.b64 > /tmp/registry.b64
+          base64 -d /tmp/registry.b64 > src/SHELLeye.Kernel/LinuxProviderRegistry.cs
           actual="$(git hash-object src/SHELLeye.Kernel/LinuxProviderRegistry.cs)"
+          echo "registry blob=$actual"
           test "$actual" = "702b54d25b24ca7815e6dc8736e752a227a23b43"
           git config user.name "StealthEyeLLC Build 002 Assembler"
           git config user.email "actions@users.noreply.github.com"
