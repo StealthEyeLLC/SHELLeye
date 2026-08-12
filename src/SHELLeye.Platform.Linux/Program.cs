@@ -1,6 +1,7 @@
 ﻿using Microsoft.Win32.SafeHandles;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
@@ -24,6 +25,7 @@ internal static class Program
     public static async Task<int> Main(string[] args)
     {
         if(!OperatingSystem.IsLinux()){Console.Error.WriteLine("SHELLeye.Platform.Linux requires Linux.");return 64;}
+        if(args.Length>0&&args[0]=="--launch-proxy")return RunLaunchProxy(args);
         if(args.Length>0&&args[0]=="--exec-fixture")return RunExecFixture(args);
         for(int i=0;i<args.Length;i++){if(args[i]=="--provider-key"&&i+1<args.Length)_providerKey=args[++i];else if(args[i]=="--distro"&&i+1<args.Length)_distro=args[++i];}
         if(!args.Contains("--server",StringComparer.Ordinal)){Console.Error.WriteLine("Expected --server.");return 64;}
@@ -66,22 +68,30 @@ internal static class Program
     private static object ProcessInspect(JsonElement p){CheckWorld(p);int pid=RequiredInt(p,"pid");ulong? expected=OptUlong(p,"expectedStartTicks");using var h=LinuxNative.OpenVerifiedPidfd(pid,expected);return ProcessResult(h.Process);}
     private static object ProcessStart(JsonElement p)
     {
-        CheckWorld(p);if(!File.Exists("/usr/bin/systemd-run")||!File.Exists("/usr/bin/systemctl"))throw new ProviderException("unsupported_by_provider","systemd transient launch support is unavailable.");
-        string executable=RequiredString(p,"executable"),cwd=OptString(p,"cwd")??Environment.CurrentDirectory,token=Guid.NewGuid().ToString("N"),unit="shelleye-"+token+".service",gate="/run/shelleye-launch-"+token+".gate";
-        var launch=new List<string>{"--unit="+unit,"--collect","--quiet","--property=Type=simple","--property=KillMode=process","--working-directory="+cwd};
-        if(p.TryGetProperty("environment",out var env)&&env.ValueKind==JsonValueKind.Object)foreach(var kv in env.EnumerateObject())launch.Add("--setenv="+kv.Name+"="+(kv.Value.GetString()??""));
-        launch.Add("/bin/sh");launch.Add("-c");launch.Add("gate=$1; shift; while [ ! -e \"$gate\" ]; do /usr/bin/sleep 0.01; done; /bin/rm -f \"$gate\"; exec \"$@\"");launch.Add("shelleye-launch");launch.Add(gate);launch.Add(executable);if(p.TryGetProperty("args",out var ax)&&ax.ValueKind==JsonValueKind.Array)foreach(var a in ax.EnumerateArray())launch.Add(a.GetString()??"");
-        ToolResult started=RunTool("/usr/bin/systemd-run",launch,5000);if(started.ExitCode!=0)throw new ProviderException("native_error","systemd transient process launch failed.",details:new{unit,exitCode=started.ExitCode,stdout=started.Stdout,stderr=started.Stderr});
-        LinuxNative.ProcInfo? witness=null;int pid=0;try{for(int i=0;i<400;i++){pid=SystemdMainPid(unit);if(pid>0){try{using var h=LinuxNative.OpenVerifiedPidfd(pid,null);witness=h.Process;break;}catch(ProviderException e)when(e.Code is "destroyed" or "not_found"){}}Thread.Sleep(5);}if(witness is null)throw new ProviderException("unknown","Started process did not reach the exact launch-witness barrier.",details:new{unit});File.WriteAllText(gate,"go");for(int i=0;i<100;i++){try{using var h=LinuxNative.OpenVerifiedPidfd(pid,witness.StartTicks);var current=h.Process;if(!StringComparer.Ordinal.Equals(current.Exe,witness.Exe))return ProcessResult(current);}catch(ProviderException e)when(e.Code=="destroyed"){break;}Thread.Sleep(2);}return ProcessResult(witness);}catch{TryStopUnit(unit);throw;}finally{try{if(File.Exists(gate))File.Delete(gate);}catch{}}
+        CheckWorld(p);
+        if(!File.Exists("/usr/bin/systemd-run")||!File.Exists("/usr/bin/systemctl"))throw new ProviderException("unsupported_by_provider","systemd transient launch support is unavailable.");
+        string requested=RequiredString(p,"executable"),executable=ResolveExecutable(requested);if(!File.Exists(executable))throw new ProviderException("not_found","Executable not found.",2,details:new{executable=requested});
+        string launcher=Environment.ProcessPath??throw new ProviderException("native_error","Linux helper process path is unavailable."),cwd=OptString(p,"cwd")??Environment.CurrentDirectory,nonce=Guid.NewGuid().ToString("N"),unit="shelleye-"+nonce+".service",socketPath="/tmp/shelleye-launch-"+nonce+".sock";
+        try{if(File.Exists(socketPath))File.Delete(socketPath);}catch{}
+        using var listener=new Socket(AddressFamily.Unix,SocketType.Stream,ProtocolType.Unspecified);listener.Bind(new UnixDomainSocketEndPoint(socketPath));listener.Listen(1);
+        try
+        {
+            var launch=new List<string>{"--unit="+unit,"--collect","--quiet","--property=Type=simple","--property=KillMode=process","--working-directory="+cwd};
+            if(p.TryGetProperty("environment",out var env)&&env.ValueKind==JsonValueKind.Object)foreach(var kv in env.EnumerateObject())launch.Add("--setenv="+kv.Name+"="+(kv.Value.GetString()??""));
+            launch.Add(launcher);launch.Add("--launch-proxy");launch.Add(socketPath);launch.Add(nonce);launch.Add(executable);if(p.TryGetProperty("args",out var ax)&&ax.ValueKind==JsonValueKind.Array)foreach(var a in ax.EnumerateArray())launch.Add(a.GetString()??"");
+            ToolResult started=RunTool("/usr/bin/systemd-run",launch,5000);if(started.ExitCode!=0)throw new ProviderException("native_error","systemd transient process launch failed.",details:new{unit,exitCode=started.ExitCode,stdout=started.Stdout,stderr=started.Stderr});
+            if(!listener.Poll(5_000_000,SelectMode.SelectRead)){TryStopUnit(unit);throw new ProviderException("timeout","Linux launch proxy did not establish its witness handshake.",details:new{unit});}
+            using Socket peer=listener.Accept();peer.ReceiveTimeout=3000;peer.SendTimeout=3000;using var stream=new NetworkStream(peer,ownsSocket:false);using var reader=new StreamReader(stream,Encoding.UTF8,false,1024,true);using var writer=new StreamWriter(stream,new UTF8Encoding(false),1024,true){AutoFlush=true};
+            string? ready=reader.ReadLine();string[] fields=(ready??"").Split('|');if(fields.Length!=3||!StringComparer.Ordinal.Equals(fields[0],nonce)||!int.TryParse(fields[1],out int pid)||!ulong.TryParse(fields[2],out ulong startTicks)||pid<=0){TryStopUnit(unit);throw new ProviderException("native_error","Linux launch proxy returned an invalid witness handshake.",details:new{unit,ready});}
+            int mainPid=0;for(int i=0;i<40;i++){mainPid=SystemdMainPid(unit);if(mainPid==pid)break;Thread.Sleep(10);}if(mainPid!=pid){TryStopUnit(unit);throw new ProviderException("ambiguous","systemd MainPID did not match the launch-proxy lifetime witness.",details:new{unit,mainPid,proxyPid=pid});}
+            LinuxNative.ProcInfo info;try{using var h=LinuxNative.OpenVerifiedPidfd(pid,startTicks);info=h.Process;}catch{TryStopUnit(unit);throw;}
+            writer.WriteLine("GO");writer.Flush();return ProcessResult(info);
+        }
+        catch(ProviderException){throw;}
+        catch(Exception e){TryStopUnit(unit);throw new ProviderException("native_error","Linux exact process launch handshake failed.",details:new{unit,socketPath},inner:e);}
+        finally{try{if(File.Exists(socketPath))File.Delete(socketPath);}catch{}}
     }
-    private sealed record ToolResult(int ExitCode,string Stdout,string Stderr);
-    private static ToolResult RunTool(string executable,IEnumerable<string> args,int timeoutMs)
-    {
-        var psi=new ProcessStartInfo(executable){UseShellExecute=false,RedirectStandardOutput=true,RedirectStandardError=true};foreach(string arg in args)psi.ArgumentList.Add(arg);Process process;try{process=Process.Start(psi)??throw new ProviderException("native_error","Linux provider tool process start returned null.",details:new{executable});}catch(System.ComponentModel.Win32Exception e)when(e.NativeErrorCode==2){throw new ProviderException("not_found","Linux provider tool executable not found.",e.NativeErrorCode,details:new{executable},inner:e);}using(process){Task<string> so=process.StandardOutput.ReadToEndAsync(),se=process.StandardError.ReadToEndAsync();if(!process.WaitForExit(timeoutMs)){try{process.Kill(true);}catch{}throw new ProviderException("timeout","Linux provider tool timed out.",details:new{executable});}Task.WaitAll(so,se);return new(process.ExitCode,so.Result.Trim(),se.Result.Trim());}
-    }
-    private static int SystemdMainPid(string unit){ToolResult r=RunTool("/usr/bin/systemctl",new[]{"show",unit,"--property=MainPID","--value","--no-pager"},3000);return r.ExitCode==0&&int.TryParse(r.Stdout,out int pid)?pid:0;}
-    private static void TryStopUnit(string unit){try{_=RunTool("/usr/bin/systemctl",new[]{"stop",unit},3000);}catch{}try{_=RunTool("/usr/bin/systemctl",new[]{"reset-failed",unit},3000);}catch{}}
-    private static object ProcessWait(JsonElement p){CheckWorld(p);int pid=RequiredInt(p,"pid");ulong expected=RequiredUlong(p,"expectedStartTicks");int timeout=OptInt(p,"timeoutMs")??30000;try{using var h=LinuxNative.OpenVerifiedPidfd(pid,expected);if(!LinuxNative.WaitPidfd(h.Fd,timeout))throw new ProviderException("timeout","Process wait timed out.");}catch(ProviderException e)when(e.Code=="destroyed"){}return new{providerEpoch=ProviderEpoch,worldEpoch=CurrentWorld().WorldEpoch,pid,state="exited",startTicks=expected};}
+    private static object ProcessWait(JsonElement p){CheckWorld(p);int pid=RequiredInt(p,"pid");ulong expected=RequiredUlong(p,"expectedStartTicks");int timeout=OptInt(p,"timeoutMs")??30000;using var h=LinuxNative.OpenVerifiedPidfd(pid,expected);if(!LinuxNative.WaitPidfd(h.Fd,timeout))throw new ProviderException("timeout","Process wait timed out.");return new{providerEpoch=ProviderEpoch,worldEpoch=CurrentWorld().WorldEpoch,pid,state="exited",startTicks=expected};}
     private static object ProcessTerminate(JsonElement p)
     {
         CheckWorld(p);int pid=RequiredInt(p,"pid");ulong expected=RequiredUlong(p,"expectedStartTicks");using var h=LinuxNative.OpenVerifiedPidfd(pid,expected);int rc;try{rc=LinuxNative.pidfd_send_signal(h.Fd,15,IntPtr.Zero,0);}catch(EntryPointNotFoundException e){throw new ProviderException("unsupported_by_provider","pidfd_send_signal is unavailable.",inner:e);}if(rc!=0){int e=LinuxNative.Errno;if(e==3)throw new ProviderException("destroyed","Process exited before signal delivery.",e);if(e is 1 or 13)throw new ProviderException("permission_denied","pidfd_send_signal permission denied.",e);throw new ProviderException("native_error","pidfd_send_signal failed.",e);}if(!LinuxNative.WaitPidfd(h.Fd,5000)){if(LinuxNative.pidfd_send_signal(h.Fd,9,IntPtr.Zero,0)!=0&&LinuxNative.Errno!=3)throw new ProviderException("native_error","pidfd SIGKILL failed.",LinuxNative.Errno);_=LinuxNative.WaitPidfd(h.Fd,5000);}return new{providerEpoch=ProviderEpoch,worldEpoch=CurrentWorld().WorldEpoch,pid,state="exited",exactPidfdActuation=true,startTicks=expected};
@@ -111,9 +121,34 @@ internal static class Program
     private static void CheckFileExpected(JsonElement p,LinuxNative.StatWitness st){if(p.TryGetProperty("expectedDevMajor",out var dm)&&dm.TryGetUInt32(out uint dmaj)&&dmaj!=st.DevMajor)throw new ProviderException("stale","File device major changed.");if(p.TryGetProperty("expectedDevMinor",out var dn)&&dn.TryGetUInt32(out uint dmin)&&dmin!=st.DevMinor)throw new ProviderException("stale","File device minor changed.");if(p.TryGetProperty("expectedInode",out var ino)&&ino.TryGetUInt64(out ulong i)&&i!=st.Inode)throw new ProviderException("stale","File inode changed.");if(p.TryGetProperty("expectedMountId",out var mi)&&mi.TryGetUInt64(out ulong m)&&m!=st.MountId)throw new ProviderException("stale","File mount identity changed.");}
     private static object FileResult(HeldFile held,LinuxNative.StatWitness st){try{held.Path=LinuxNative.ReadLink($"/proc/self/fd/{held.Fd}");}catch{}return new{token=held.Token,path=held.Path,kind=(st.Mode&0xF000)==0x4000?"dir":"file",canWrite=held.CanWrite,providerEpoch=ProviderEpoch,worldEpoch=CurrentWorld().WorldEpoch,identity=new{devMajor=st.DevMajor,devMinor=st.DevMinor,inode=st.Inode,mountId=st.MountId,uniqueMountId=st.UniqueMountId},revision=new{size=st.Size,mtimeNs=st.MTimeNs,ctimeNs=st.CTimeNs,btimeNs=st.BTimeNs},owner=new{uid=st.Uid,gid=st.Gid,mode=st.Mode},exportedHandle=held.ExportedHandle is null?null:new{type=held.ExportedHandle.Type,bytesBase64=held.ExportedHandle.BytesBase64,mountId=held.ExportedHandle.MountId}};}
 
+    private sealed record ToolResult(int ExitCode,string Stdout,string Stderr);
+    private static ToolResult RunTool(string executable,IEnumerable<string> args,int timeoutMs)
+    {
+        var psi=new ProcessStartInfo(executable){UseShellExecute=false,RedirectStandardOutput=true,RedirectStandardError=true};foreach(string arg in args)psi.ArgumentList.Add(arg);Process process;try{process=Process.Start(psi)??throw new ProviderException("native_error","Linux provider tool process start returned null.",details:new{executable});}catch(System.ComponentModel.Win32Exception e)when(e.NativeErrorCode==2){throw new ProviderException("not_found","Linux provider tool executable not found.",e.NativeErrorCode,details:new{executable},inner:e);}using(process){Task<string> so=process.StandardOutput.ReadToEndAsync(),se=process.StandardError.ReadToEndAsync();if(!process.WaitForExit(timeoutMs)){try{process.Kill(true);}catch{}throw new ProviderException("timeout","Linux provider tool timed out.",details:new{executable});}Task.WaitAll(so,se);return new(process.ExitCode,so.Result.Trim(),se.Result.Trim());}
+    }
+    private static int SystemdMainPid(string unit){ToolResult r=RunTool("/usr/bin/systemctl",new[]{"show",unit,"--property=MainPID","--value","--no-pager"},3000);return r.ExitCode==0&&int.TryParse(r.Stdout,out int pid)?pid:0;}
+    private static void TryStopUnit(string unit){try{_=RunTool("/usr/bin/systemctl",new[]{"stop",unit},3000);}catch{}try{_=RunTool("/usr/bin/systemctl",new[]{"reset-failed",unit},3000);}catch{}}
+    private static string ResolveExecutable(string executable)
+    {
+        if(executable.Contains('/'))return Path.GetFullPath(executable);string? path=Environment.GetEnvironmentVariable("PATH");if(path is not null)foreach(string dir in path.Split(':',StringSplitOptions.RemoveEmptyEntries)){string candidate=Path.Combine(dir,executable);if(File.Exists(candidate))return candidate;}return executable;
+    }
+    private static int RunLaunchProxy(string[] args)
+    {
+        if(args.Length<4)return 64;string socketPath=args[1],nonce=args[2],exe=ResolveExecutable(args[3]);string[] nativeArgs=new[]{exe}.Concat(args.Skip(4)).ToArray();
+        try
+        {
+            using var socket=new Socket(AddressFamily.Unix,SocketType.Stream,ProtocolType.Unspecified);socket.Connect(new UnixDomainSocketEndPoint(socketPath));socket.ReceiveTimeout=5000;socket.SendTimeout=5000;using var stream=new NetworkStream(socket,ownsSocket:false);using var reader=new StreamReader(stream,Encoding.UTF8,false,1024,true);using var writer=new StreamWriter(stream,new UTF8Encoding(false),1024,true){AutoFlush=true};LinuxNative.ProcInfo self=LinuxNative.ReadProc(Environment.ProcessId);writer.WriteLine($"{nonce}|{self.Pid}|{self.StartTicks}");string? go=reader.ReadLine();if(!StringComparer.Ordinal.Equals(go,"GO")){Console.Error.WriteLine("launch proxy authorization handshake failed");return 125;}
+        }
+        catch(Exception e){Console.Error.WriteLine("launch proxy handshake failed: "+e.Message);return 126;}
+        return ExecNative(exe,nativeArgs);
+    }
+    private static int ExecNative(string exe,string[] nativeArgs)
+    {
+        IntPtr argv=Marshal.AllocHGlobal(IntPtr.Size*(nativeArgs.Length+1));var allocated=new List<IntPtr>();try{for(int i=0;i<nativeArgs.Length;i++){IntPtr sp=Marshal.StringToHGlobalAnsi(nativeArgs[i]);allocated.Add(sp);Marshal.WriteIntPtr(argv,i*IntPtr.Size,sp);}Marshal.WriteIntPtr(argv,nativeArgs.Length*IntPtr.Size,IntPtr.Zero);int rc=LinuxNative.execv(exe,argv);Console.Error.WriteLine($"execv failed exe={exe} rc={rc} errno={LinuxNative.Errno}");return 127;}finally{foreach(var x in allocated)Marshal.FreeHGlobal(x);Marshal.FreeHGlobal(argv);}
+    }
     private static int RunExecFixture(string[] args)
     {
-        int delay=args.Length>1&&int.TryParse(args[1],out var d)?d:750,seconds=args.Length>2&&int.TryParse(args[2],out var s)?s:30;Thread.Sleep(Math.Max(0,delay));string exe="/usr/bin/sleep";string[] nativeArgs={exe,seconds.ToString()};IntPtr argv=Marshal.AllocHGlobal(IntPtr.Size*(nativeArgs.Length+1));var allocated=new List<IntPtr>();try{for(int i=0;i<nativeArgs.Length;i++){IntPtr sp=Marshal.StringToHGlobalAnsi(nativeArgs[i]);allocated.Add(sp);Marshal.WriteIntPtr(argv,i*IntPtr.Size,sp);}Marshal.WriteIntPtr(argv,nativeArgs.Length*IntPtr.Size,IntPtr.Zero);int rc=LinuxNative.execv(exe,argv);Console.Error.WriteLine($"execv failed rc={rc} errno={LinuxNative.Errno}");return 127;}finally{foreach(var x in allocated)Marshal.FreeHGlobal(x);Marshal.FreeHGlobal(argv);}
+        int delay=args.Length>1&&int.TryParse(args[1],out var d)?d:750,seconds=args.Length>2&&int.TryParse(args[2],out var s)?s:30;Thread.Sleep(Math.Max(0,delay));string exe="/usr/bin/sleep";return ExecNative(exe,new[]{exe,seconds.ToString()});
     }
     private static string RequiredString(JsonElement p,string n)=>p.TryGetProperty(n,out var x)&&x.ValueKind==JsonValueKind.String?x.GetString()!:throw new ProviderException("invalid_argument","Missing string parameter: "+n);
     private static string? OptString(JsonElement p,string n)=>p.ValueKind==JsonValueKind.Object&&p.TryGetProperty(n,out var x)&&x.ValueKind==JsonValueKind.String?x.GetString():null;
