@@ -1,0 +1,26 @@
+﻿{
+    "classification":  "RUN 004 FREEZE 3 INVALIDATION / GOVERNING PREREQUISITE FAILURE",
+    "status":  "FREEZE 3 SUPERSEDED / RETURN TO PROSPECTIVE ONLY",
+    "freezeCommit":  "a91ede2b5f7d7c3587216b7b1ff9ce77bd5638c0",
+    "implementationCommit":  "6bb4806a64e27b82e7e664f6ad915364fe8d99b6",
+    "observerCommit":  "cd7dd98f8ec8df910f41c89e083b855bf0cc3c4d",
+    "reason":  "The governing user instruction requires the full prospective regression and L3/L4/remaining preflights to be green before a new measured freeze. Freeze 3 records only deterministic validation plus the corrected-observer smoke before freezing. The required prospective 256 PID stress, repeated Program Host pressure, L3 kernel-gap recovery with the versioned observer, L4 actual distro restart, and post-L4 pressure were not all completed on the Freeze 3 zero-state runtime before the freeze.",
+    "requiredBeforeNextFreeze":  [
+                                     "Release build 0/0",
+                                     "provider contracts 5/5",
+                                     "Windows hostile core 25/25 with zero false/wrong metrics",
+                                     "fresh owner L0",
+                                     "prospective 256 Linux PID stress",
+                                     "prospective repeated Program Host pressure",
+                                     "prospective L3 kernel-gap recovery using versioned observer",
+                                     "prospective L4 actual Ubuntu distro restart",
+                                     "prospective post-L4 provider-aware operation"
+                                 ],
+    "authorization":  {
+                          "measuredRun004":  false,
+                          "prospectiveOnly":  true,
+                          "newFreezeRequiredAfterAllProspectiveGreen":  true,
+                          "docs14":  false,
+                          "mainPromotion":  false
+                      }
+}
