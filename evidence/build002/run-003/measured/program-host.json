@@ -1,0 +1,406 @@
+{
+  "passed": true,
+  "completedUtc": "2026-08-12T16:21:46.245Z",
+  "oneProgramHostInvocation": true,
+  "onePersistentConnection": true,
+  "typedOperationCount": 55,
+  "linuxOperationCount": 38,
+  "modelCallsBetweenPrimitives": 0,
+  "providerWorld": {
+    "worldId": "world_1",
+    "state": "current"
+  },
+  "process": {
+    "execSameConcept": true,
+    "simultaneousDistinct": true,
+    "oldActuationRejected": true
+  },
+  "file": {
+    "renamePreserved": true,
+    "hardlinkSameConcept": true,
+    "recreateNewConcept": true,
+    "oldWriteTouchedReplacement": false,
+    "exactRenameUnsupported": true
+  },
+  "crossProvider": {
+    "windowsFileId": "file_3",
+    "linuxFileId": "file_4",
+    "identitiesMerged": false
+  },
+  "service": {
+    "id": "svc_1",
+    "state": "running"
+  },
+  "powershell": {
+    "structured": true,
+    "provider": "Microsoft.PowerShell.SDK"
+  },
+  "health": {
+    "database": "C:\\SHELLeye\\state\\build002-run003-measured\\shelleye.db",
+    "quickCheck": "ok",
+    "journalMode": "wal",
+    "cursor": 1056
+  },
+  "sync": {
+    "cursor": 1058,
+    "files": {
+      "checkedCount": 2,
+      "changed": 1,
+      "replaced": 0
+    },
+    "linux": {
+      "provider": "linux-wsl2",
+      "attempted": true,
+      "available": true,
+      "processes": 0,
+      "files": 3,
+      "stale": 0
+    },
+    "reconciled": true,
+    "globalQuiescence": false,
+    "completeHistory": false
+  },
+  "deltaCount": 32,
+  "trace": [
+    {
+      "n": 1,
+      "name": "rpc.hello",
+      "linux": false,
+      "ms": 1
+    },
+    {
+      "n": 2,
+      "name": "world.providers",
+      "linux": false,
+      "ms": 0
+    },
+    {
+      "n": 3,
+      "name": "machine.inspect",
+      "linux": false,
+      "ms": 1
+    },
+    {
+      "n": 4,
+      "name": "session.inspect",
+      "linux": false,
+      "ms": 1
+    },
+    {
+      "n": 5,
+      "name": "volume.inspect.C",
+      "linux": false,
+      "ms": 0
+    },
+    {
+      "n": 6,
+      "name": "provider.probe",
+      "linux": true,
+      "ms": 6
+    },
+    {
+      "n": 7,
+      "name": "provider.context",
+      "linux": true,
+      "ms": 1
+    },
+    {
+      "n": 8,
+      "name": "world.cursor",
+      "linux": false,
+      "ms": 1
+    },
+    {
+      "n": 9,
+      "name": "linux.file.create",
+      "linux": true,
+      "ms": 16
+    },
+    {
+      "n": 10,
+      "name": "linux.file.inspect.initial",
+      "linux": true,
+      "ms": 4
+    },
+    {
+      "n": 11,
+      "name": "linux.file.read.initial",
+      "linux": true,
+      "ms": 5
+    },
+    {
+      "n": 12,
+      "name": "linux.file.write.guarded",
+      "linux": true,
+      "ms": 3
+    },
+    {
+      "n": 13,
+      "name": "linux.file.inspect.after-write",
+      "linux": true,
+      "ms": 1
+    },
+    {
+      "n": 14,
+      "name": "linux.process.start.mv",
+      "linux": true,
+      "ms": 74
+    },
+    {
+      "n": 15,
+      "name": "linux.process.wait.mv",
+      "linux": true,
+      "ms": 5
+    },
+    {
+      "n": 16,
+      "name": "linux.file.inspect.after-rename",
+      "linux": true,
+      "ms": 1
+    },
+    {
+      "n": 17,
+      "name": "linux.process.start.ln",
+      "linux": true,
+      "ms": 44
+    },
+    {
+      "n": 18,
+      "name": "linux.process.wait.ln",
+      "linux": true,
+      "ms": 4
+    },
+    {
+      "n": 19,
+      "name": "linux.file.retain.hardlink",
+      "linux": true,
+      "ms": 3
+    },
+    {
+      "n": null,
+      "name": "linux.file.rename.exact-facet",
+      "expectedError": "unsupported_by_provider"
+    },
+    {
+      "n": 20,
+      "name": "linux.process.start.exec-fixture",
+      "linux": true,
+      "ms": 63
+    },
+    {
+      "n": 21,
+      "name": "linux.process.inspect.pre-exec",
+      "linux": true,
+      "ms": 4
+    },
+    {
+      "n": 22,
+      "name": "linux.process.inspect.post-exec",
+      "linux": true,
+      "ms": 1
+    },
+    {
+      "n": 23,
+      "name": "linux.process.terminate.exec-fixture",
+      "linux": true,
+      "ms": 5
+    },
+    {
+      "n": 24,
+      "name": "linux.process.start.same-A",
+      "linux": true,
+      "ms": 74
+    },
+    {
+      "n": 25,
+      "name": "linux.process.start.same-B",
+      "linux": true,
+      "ms": 42
+    },
+    {
+      "n": 26,
+      "name": "linux.process.inspect.same-A",
+      "linux": true,
+      "ms": 0
+    },
+    {
+      "n": 27,
+      "name": "linux.process.inspect.same-B",
+      "linux": true,
+      "ms": 1
+    },
+    {
+      "n": 28,
+      "name": "linux.process.terminate.same-A",
+      "linux": true,
+      "ms": 1
+    },
+    {
+      "n": 29,
+      "name": "linux.process.terminate.same-B",
+      "linux": true,
+      "ms": 2
+    },
+    {
+      "n": 30,
+      "name": "linux.process.start.short",
+      "linux": true,
+      "ms": 43
+    },
+    {
+      "n": 31,
+      "name": "linux.process.wait.short",
+      "linux": true,
+      "ms": 1001
+    },
+    {
+      "n": 32,
+      "name": "linux.process.start.replacement",
+      "linux": true,
+      "ms": 80
+    },
+    {
+      "n": null,
+      "name": "linux.process.terminate.old",
+      "expectedError": "destroyed"
+    },
+    {
+      "n": 33,
+      "name": "linux.process.terminate.replacement",
+      "linux": true,
+      "ms": 1
+    },
+    {
+      "n": 34,
+      "name": "linux.process.start.rm-original",
+      "linux": true,
+      "ms": 41
+    },
+    {
+      "n": 35,
+      "name": "linux.process.wait.rm-original",
+      "linux": true,
+      "ms": 4
+    },
+    {
+      "n": 36,
+      "name": "linux.file.inspect.old-unlinked",
+      "linux": true,
+      "ms": 1
+    },
+    {
+      "n": 37,
+      "name": "linux.file.create.replacement",
+      "linux": true,
+      "ms": 1
+    },
+    {
+      "n": 38,
+      "name": "linux.file.read.replacement-before-old-write",
+      "linux": true,
+      "ms": 1
+    },
+    {
+      "n": 39,
+      "name": "linux.file.write.old-unlinked-fd",
+      "linux": true,
+      "ms": 1
+    },
+    {
+      "n": 40,
+      "name": "linux.file.read.replacement-after-old-write",
+      "linux": true,
+      "ms": 1
+    },
+    {
+      "n": 41,
+      "name": "windows.directory.create.cross",
+      "linux": false,
+      "ms": 11
+    },
+    {
+      "n": 42,
+      "name": "windows.file.create.cross",
+      "linux": false,
+      "ms": 3
+    },
+    {
+      "n": 43,
+      "name": "windows.file.inspect.cross",
+      "linux": false,
+      "ms": 4
+    },
+    {
+      "n": 44,
+      "name": "linux.file.retain.mnt-c",
+      "linux": true,
+      "ms": 5
+    },
+    {
+      "n": 45,
+      "name": "windows.file.write.cross",
+      "linux": false,
+      "ms": 3
+    },
+    {
+      "n": 46,
+      "name": "linux.file.inspect.cross-after-windows-write",
+      "linux": true,
+      "ms": 1
+    },
+    {
+      "n": 47,
+      "name": "windows.service.inspect.EventLog",
+      "linux": false,
+      "ms": 3
+    },
+    {
+      "n": 48,
+      "name": "windows.powershell.structured",
+      "linux": false,
+      "ms": 646
+    },
+    {
+      "n": 49,
+      "name": "state.health",
+      "linux": false,
+      "ms": 0
+    },
+    {
+      "n": 50,
+      "name": "world.sync",
+      "linux": false,
+      "ms": 32
+    },
+    {
+      "n": 51,
+      "name": "world.delta",
+      "linux": false,
+      "ms": 1
+    },
+    {
+      "n": 52,
+      "name": "windows.file.delete.cross",
+      "linux": false,
+      "ms": 2
+    },
+    {
+      "n": 53,
+      "name": "windows.directory.delete.cross",
+      "linux": false,
+      "ms": 1
+    },
+    {
+      "n": 54,
+      "name": "linux.process.start.cleanup-rm",
+      "linux": true,
+      "ms": 55
+    },
+    {
+      "n": 55,
+      "name": "linux.process.wait.cleanup-rm",
+      "linux": true,
+      "ms": 5
+    }
+  ]
+}

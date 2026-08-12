@@ -1,0 +1,44 @@
+﻿{
+    "classification":  "MEASURED RUN 003 PRE-RECOVERY GATES",
+    "freezeCommit":  "122eaceeec0bde5777228ceef12a2b8fc445b9f9",
+    "implementationCommit":  "6bb4806a64e27b82e7e664f6ad915364fe8d99b6",
+    "capturedUtc":  "2026-08-12T16:22:28.9622369+00:00",
+    "L1":  {
+               "status":  "PASS",
+               "iterations":  256,
+               "reuseObserved":  0,
+               "wrongRebound":  0,
+               "falseProcessRebounds":  0,
+               "sha256":  "4232810361617797974A64C8B29249924755F5493D1200FD1A51EC5B330BDBB9"
+           },
+    "programHost":  {
+                        "status":  "PASS",
+                        "typedOperations":  55,
+                        "linuxOperations":  38,
+                        "modelCalls":  0,
+                        "oneInvocation":  true,
+                        "oneConnection":  true,
+                        "sha256":  "C4A105D12F9C983C1E443D074A2CE41D38AFEC5BCD2C41B333DB1019DD374D56"
+                    },
+    "L2":  {
+               "status":  "PASS",
+               "renamePreserved":  true,
+               "hardlinkSameConcept":  true,
+               "recreateNewConcept":  true,
+               "oldWriteTouchedReplacement":  false,
+               "exactRenameUnsupported":  true
+           },
+    "L5":  {
+               "status":  "PASS",
+               "identitiesMerged":  false,
+               "windowsFileId":  "file_3",
+               "linuxFileId":  "file_4"
+           },
+    "deltaWorldSync":  {
+                           "status":  "PASS",
+                           "deltaCount":  32,
+                           "providerAvailable":  true,
+                           "completeHistory":  false,
+                           "globalQuiescence":  false
+                       }
+}
