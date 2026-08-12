@@ -1,0 +1,62 @@
+{
+  "classification": "MEASURED RUN 004 FINAL L3",
+  "freezeCommit": "05545238e7a23091e86ae72174a4c0d329a1cf6d",
+  "implementationCommit": "6bb4806a64e27b82e7e664f6ad915364fe8d99b6",
+  "observerCommit": "cd7dd98f8ec8df910f41c89e083b855bf0cc3c4d",
+  "observerSha256": "57ED62B0FCED171F618B9749C788452471ED3242FE0EB89E3350CC1210B269DD",
+  "passed": true,
+  "prepare": {
+    "processId": "proc_266",
+    "pid": 3486,
+    "startTicks": "30561",
+    "fileId": "file_5",
+    "filePath": "/tmp/shelleye-build002-recovery-1786554301544.txt",
+    "inode": "51418",
+    "mountId": "2147483732",
+    "strongGapHandle": true,
+    "linuxWorldEpoch": "linux_epoch_e670dc03eafd2b924ea53c42",
+    "sha256": "2366FDB677E736F5C3098B765C9E306A012094CED5DD1DE31ED6BE76F3CAF855"
+  },
+  "hardStop": {
+    "oldKernelPid": 115388,
+    "oldKernelName": "SHELLeye.Run004.FinalMeasured.exe",
+    "kernelAbsentAfter15Seconds": true,
+    "anchorPid": 78868,
+    "anchorAlive": true,
+    "anchorStartTimeExact": true,
+    "sha256": "1FDAACA86E10AAC49B826B312ECF7CD92FEF1F96CCEFE136F692734868CE8B05"
+  },
+  "nativeGapObserver": {
+    "invocations": 1,
+    "passed": true,
+    "providerObservable": true,
+    "processExact": true,
+    "filePresent": true,
+    "bootId": "84231dbf-82a4-46a6-9adc-90f72bc3d6f5",
+    "pidNamespace": "pid:[4026532221]",
+    "initStartTicks": "269",
+    "pid": 3486,
+    "expectedStartTicks": "30561",
+    "actualStartTicks": "30561",
+    "executable": "/usr/bin/sleep",
+    "elapsedSecondsFromPrepare": 49.35,
+    "sha256": "46F7438777B92BCC0F992CB4C0995434C50BA80AF4722F3BA04F0E9DB107576F"
+  },
+  "restart": {
+    "newKernelPid": 27444,
+    "kernelEpoch": "kernel_2",
+    "bootEpoch": "boot_1",
+    "samePipe": true,
+    "sameDatabase": true,
+    "sameExactAnchor": true
+  },
+  "recover": {
+    "passed": true,
+    "sameLinuxWorldEpoch": true,
+    "processExact": true,
+    "fileOutcome": "current",
+    "fileExact": true,
+    "strongGapHandle": true,
+    "sha256": "64634685FCD4D99B88C1A3819C659300116EAB6CFAC49296D4EB532D5C7BE987"
+  }
+}
