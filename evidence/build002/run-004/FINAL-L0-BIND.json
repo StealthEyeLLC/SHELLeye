@@ -1,0 +1,51 @@
+{
+  "classification": "BUILD 002 RUN 004 FINAL MEASURED L0 BIND",
+  "prospectivePassCommit": "a3e710ba73eb164c926458bef00402656e92492e",
+  "implementationCommit": "6bb4806a64e27b82e7e664f6ad915364fe8d99b6",
+  "implementationTree": "ac54028898a4257cf04ca23dac7a373aacb69203",
+  "observerCommit": "cd7dd98f8ec8df910f41c89e083b855bf0cc3c4d",
+  "capturedUtc": "2026-08-12T16:59:55.7718219+00:00",
+  "owner": "stealtheyellc\\stealtheye",
+  "session": 1,
+  "kernelPid": 115388,
+  "kernelEpoch": "kernel_1",
+  "powerShellProviderEpoch": "provider_1",
+  "pipe": "shelleye-build002-run004-final-measured",
+  "database": "C:\\SHELLeye\\state\\build002-run004-final-measured\\shelleye.db",
+  "worldId": "world_1",
+  "providerKey": "wsl:{aa957c59-794f-4ad3-ae28-9188cae51ee3}",
+  "worldEpoch": "linux_epoch_e670dc03eafd2b924ea53c42",
+  "linuxProviderEpoch": "linux_provider_8fbc9a3f41f14f04b4d42d705cef26ae",
+  "os": "Ubuntu 24.04.4 LTS",
+  "kernel": "6.18.33.2-microsoft-standard-WSL2",
+  "bootId": "84231dbf-82a4-46a6-9adc-90f72bc3d6f5",
+  "pidNamespace": "pid:[4026532221]",
+  "initStartTicks": 269,
+  "capabilities": {"pidfd":true,"statx":true,"inotify":true,"cgroupV2":true,"systemd":true,"exportableFileHandle":true,"mountIdUnique":true},
+  "dbQuickCheck": "ok",
+  "rawL0Sha256": "6C5DDC28C15CF89FB120983D5004C429130561C50C536664923DCBDB8FA7F6D8",
+  "freezeCheck": {
+    "capturedUtc": "2026-08-12T17:00:23.8583430+00:00",
+    "sha256": "39A00887B4CD2FC34EF3ACCEB4D767FCBF6BA16660E90E99130AD4DA8A51F29F",
+    "worldEpochMatch": true,
+    "bootIdMatch": true,
+    "dbQuickCheck": "ok"
+  },
+  "anchor": {
+    "pid": 78868,
+    "startTimeUtcTicks": 639221507954661250,
+    "executable": "C:\\Program Files\\WSL\\wsl.exe",
+    "distro": "Ubuntu-24.04",
+    "providerKey": "wsl:{aa957c59-794f-4ad3-ae28-9188cae51ee3}",
+    "exact": true
+  },
+  "runtime": {
+    "kernelFiles": 271,
+    "linuxFiles": 192,
+    "finalMeasuredApphostSha256": "CCBDAF2FBCA69E77F70977C2A4DDD524D3A054A809D5FEB32771629BE8C2F2E3",
+    "kernelDllSha256": "822237700CC99133E5C2376959B104D2190F33F09FAA163A82315D5677826617",
+    "linuxHelperSha256": "33533827987DAA5A7801CC2EC88407CA941379594D313557B6845DBCB5163F61",
+    "linuxHelperDllSha256": "726E27D9016A9BBDBB0174D95CEC1AA66A3A2D4EBD14A20DC4AF4FF932D7A22C"
+  },
+  "exclusivity": {"runningRun004Tasks":["SHELLeye Run004 Final Kernel"],"standardNameKernels":0,"finalMeasuredKernels":1}
+}
