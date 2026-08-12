@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Management;
 using System.Text;
 using System.Text.Json;
 
@@ -121,8 +122,7 @@ public sealed class LinuxWslProvider : IDisposable
                 try{File.Delete(_anchorStatePath);}catch{}
             }
             string? dir=Path.GetDirectoryName(_anchorStatePath);if(!String.IsNullOrEmpty(dir))Directory.CreateDirectory(dir);
-            var psi=CreateWslStartInfo("/usr/bin/sleep",new[]{"infinity"});psi.RedirectStandardInput=false;psi.RedirectStandardOutput=false;psi.RedirectStandardError=false;
-            var anchor=Process.Start(psi)??throw new ShellEyeException("provider_unavailable","WSL provider lifetime anchor did not start.",details:new{distro=_distro});
+            var anchor=StartDetachedAnchorViaWmi();
             if(anchor.WaitForExit(300)){int exit=anchor.ExitCode;anchor.Dispose();throw new ShellEyeException("provider_unavailable","WSL provider lifetime anchor exited during startup.",details:new{distro=_distro,exitCode=exit});}
             string exe=anchor.MainModule?.FileName??throw new ShellEyeException("provider_unavailable","WSL provider lifetime anchor executable identity is unavailable.",details:new{distro=_distro,pid=anchor.Id});
             long startTicks=anchor.StartTime.ToUniversalTime().Ticks;
@@ -132,6 +132,25 @@ public sealed class LinuxWslProvider : IDisposable
         }
         catch(ShellEyeException){ResetAnchor();throw;}
         catch(Exception e){ResetAnchor();throw new ShellEyeException("provider_unavailable","Failed to establish WSL provider lifetime anchor.",details:new{distro=_distro,anchorStatePath=_anchorStatePath},inner:e);}
+    }
+    private Process StartDetachedAnchorViaWmi()
+    {
+        string commandLine=BuildWindowsCommandLine(_wslExe,new[]{"--distribution",_distro,"--user","root","--exec","/usr/bin/sleep","infinity"});
+        using var processClass=new ManagementClass("Win32_Process");
+        using var input=processClass.GetMethodParameters("Create");input["CommandLine"]=commandLine;
+        using var output=processClass.InvokeMethod("Create",input,null)??throw new ShellEyeException("provider_unavailable","WMI did not return a process-creation result for the WSL provider lifetime anchor.",details:new{distro=_distro});
+        uint returnValue=Convert.ToUInt32(output["ReturnValue"]??UInt32.MaxValue),pid=Convert.ToUInt32(output["ProcessId"]??0u);
+        if(returnValue!=0||pid==0)throw new ShellEyeException("provider_unavailable","WMI failed to create the detached WSL provider lifetime anchor.",details:new{distro=_distro,returnValue,pid,commandLine});
+        Process anchor;try{anchor=Process.GetProcessById(checked((int)pid));}catch(Exception e){throw new ShellEyeException("provider_unavailable","Detached WSL provider lifetime anchor could not be opened after WMI creation.",details:new{distro=_distro,pid},inner:e);}
+        return anchor;
+    }
+    private static string BuildWindowsCommandLine(string executable,IEnumerable<string> args)=>String.Join(" ",new[]{executable}.Concat(args).Select(QuoteWindowsArgument));
+    private static string QuoteWindowsArgument(string value)
+    {
+        if(value.Length>0&&!value.Any(Char.IsWhiteSpace)&&!value.Contains('"'))return value;
+        var b=new StringBuilder("\"");int slashes=0;
+        foreach(char ch in value){if(ch=='\\'){slashes++;continue;}if(ch=='"'){b.Append('\\',slashes*2+1);b.Append('"');slashes=0;}else{b.Append('\\',slashes);slashes=0;b.Append(ch);}}
+        b.Append('\\',slashes*2);b.Append('"');return b.ToString();
     }
     private void ResetAnchor()
     {
