@@ -1,0 +1,27 @@
+name: Build 002 exact registry assembly
+on:
+  push:
+    branches: [build002-publication-probe]
+    paths:
+      - .build002-transfer/assemble-registry.trigger
+permissions:
+  contents: write
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fetch and verify exact registry blob
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsS 'https://sezu.stealtheye.net/__build002_5fae33066a28efb18d40eab0a9b6f04336ffc3f34ac71944/registry.blob' -o src/SHELLeye.Kernel/LinuxProviderRegistry.cs
+          actual="$(git hash-object src/SHELLeye.Kernel/LinuxProviderRegistry.cs)"
+          test "$actual" = "702b54d25b24ca7815e6dc8736e752a227a23b43"
+          git config user.name "StealthEyeLLC Build 002 Assembler"
+          git config user.email "actions@users.noreply.github.com"
+          git add src/SHELLeye.Kernel/LinuxProviderRegistry.cs
+          git commit -m "Assemble exact Build 002 Linux registry blob"
+          git push
