@@ -69,9 +69,12 @@ public sealed class LinuxWslProvider : IDisposable
         if(_helper is{HasExited:false}&&_writer is not null&&_reader is not null)return;
         ResetHelper();
         if(!File.Exists(_helperWindowsPath))throw new ShellEyeException("provider_unavailable","Cross-published Linux helper is missing.",details:new{helperWindowsPath=_helperWindowsPath});
-        string source=ToWslPath(_helperWindowsPath);
-        await RunWslCommandAsync("/bin/mkdir",new[]{"-p","/var/tmp/shelleye-build002"},ct);
-        await RunWslCommandAsync("/bin/cp",new[]{source,_helperLinuxPath},ct);
+        string? sourceDirectory=Path.GetDirectoryName(_helperWindowsPath);if(String.IsNullOrEmpty(sourceDirectory))throw new ShellEyeException("provider_unavailable","Cross-published Linux helper directory is invalid.",details:new{helperWindowsPath=_helperWindowsPath});
+        int slash=_helperLinuxPath.LastIndexOf('/');if(slash<=0)throw new ShellEyeException("provider_unavailable","Linux helper target path is invalid.",details:new{helperLinuxPath=_helperLinuxPath});
+        string targetDirectory=_helperLinuxPath[..slash],sourceDirectoryWsl=ToWslPath(sourceDirectory);
+        await RunWslCommandAsync("/bin/rm",new[]{"-rf",targetDirectory},ct);
+        await RunWslCommandAsync("/bin/mkdir",new[]{"-p",targetDirectory},ct);
+        await RunWslCommandAsync("/bin/cp",new[]{"-a",sourceDirectoryWsl+"/.",targetDirectory+"/"},ct);
         await RunWslCommandAsync("/bin/chmod",new[]{"0755",_helperLinuxPath},ct);
         var psi=CreateWslStartInfo(_helperLinuxPath,new[]{"--server","--provider-key",_providerKey,"--distro",_distro});
         psi.RedirectStandardInput=true;psi.RedirectStandardOutput=true;psi.RedirectStandardError=true;
