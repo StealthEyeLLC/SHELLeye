@@ -1,0 +1,23 @@
+{
+  "classification": "MEASURED RUN 004 FINAL TERMINAL POST-L4 PROGRAM HOST",
+  "freezeCommit": "05545238e7a23091e86ae72174a4c0d329a1cf6d",
+  "implementationCommit": "6bb4806a64e27b82e7e664f6ad915364fe8d99b6",
+  "programHostTree": "5411a5cd66865b024ef88d2a6232259dbe956575",
+  "programHostSha256": "4CFB2CABC3FBCDB458B8D1A0EA05C56355FC3878D11F109771988F8E94DBE742",
+  "task": "SHELLeye Run004 Final Measured PostL4 ProgramHost",
+  "taskStartLocal": "2026-08-12T13:08:28-04:00",
+  "taskResult": 0,
+  "completionMetaFileCreatedUtc": "2026-08-12T17:08:32.0647498Z",
+  "passed": true,
+  "onePersistentConnection": true,
+  "typedOperationCount": 55,
+  "linuxOperationCount": 38,
+  "modelCallsBetweenPrimitives": 0,
+  "providerWorld": {"worldId":"world_1","state":"current"},
+  "processExecSameConcept": true,
+  "fileRecreateNewConcept": true,
+  "crossProviderIdentitiesMerged": false,
+  "databaseQuickCheck": "ok",
+  "syncLinuxStale": 1,
+  "evidenceNote": "The controller observed these PASS fields when the frozen task returned exit 0. A later post-campaign duplicate L4/post-L4 path overwrote the local raw stdout/meta files; Windows file creation time and Task Scheduler result preserve that the required terminal gate completed before the duplicate began. See POST-CAMPAIGN-CONTAMINATION.md."
+}
