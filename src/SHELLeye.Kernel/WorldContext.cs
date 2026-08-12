@@ -81,7 +81,7 @@ public sealed class WorldContext : IDisposable
 
     public void WriteRuntimeDescriptor()
     {
-        var value=new{pid=Environment.ProcessId,pipe="shelleye-dev",database=Store.Path,bootEpoch=BootEpoch,nativeBootId=NativeBootId,kernelEpoch=KernelEpoch,powerShellProviderEpoch=PowerShellProviderEpoch,startedUtc=DateTimeOffset.UtcNow};
+        string pipe=Environment.GetEnvironmentVariable("SHELLEYE_PIPE")??"shelleye-dev";var value=new{pid=Environment.ProcessId,pipe,database=Store.Path,bootEpoch=BootEpoch,nativeBootId=NativeBootId,kernelEpoch=KernelEpoch,powerShellProviderEpoch=PowerShellProviderEpoch,startedUtc=DateTimeOffset.UtcNow};
         File.WriteAllText(Path.Combine(RuntimeRoot,"runtime.json"),JsonSerializer.Serialize(value,new JsonSerializerOptions(JsonDefaults.Options){WriteIndented=true}));
     }
 

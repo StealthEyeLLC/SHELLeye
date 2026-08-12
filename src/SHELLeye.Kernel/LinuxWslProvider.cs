@@ -14,6 +14,8 @@ public sealed class LinuxWslProvider : IDisposable
     private readonly string _helperLinuxPath;
     private readonly StringBuilder _stderr=new();
     private Process? _helper;
+    private Process? _anchor;
+    private readonly string _anchorStatePath;
     private StreamWriter? _writer;
     private StreamReader? _reader;
     private long _nextId;
@@ -31,6 +33,7 @@ public sealed class LinuxWslProvider : IDisposable
         _wslExe=File.Exists(@"C:\Program Files\WSL\wsl.exe")?@"C:\Program Files\WSL\wsl.exe":@"C:\Windows\System32\wsl.exe";
         _helperWindowsPath=Environment.GetEnvironmentVariable("SHELLEYE_LINUX_HELPER_WINDOWS")??@"C:\SHELLeye\runtime\linux\app\SHELLeye.Platform.Linux";
         _helperLinuxPath=Environment.GetEnvironmentVariable("SHELLEYE_LINUX_HELPER_LINUX")??"/var/tmp/shelleye-build002/SHELLeye.Platform.Linux";
+        string stateRoot=Environment.GetEnvironmentVariable("SHELLEYE_STATE_ROOT")??Path.GetDirectoryName(Path.GetDirectoryName(_helperWindowsPath))??Path.GetTempPath();_anchorStatePath=Environment.GetEnvironmentVariable("SHELLEYE_LINUX_ANCHOR_STATE")??Path.Combine(stateRoot,"linux-provider-anchor.json");
     }
 
     public Task<JsonElement> ProbeAsync(CancellationToken ct=default)=>RequestAsync("probe",new{},ct);
@@ -68,6 +71,7 @@ public sealed class LinuxWslProvider : IDisposable
     {
         if(_helper is{HasExited:false}&&_writer is not null&&_reader is not null)return;
         ResetHelper();
+        EnsureProviderAnchor();
         if(!File.Exists(_helperWindowsPath))throw new ShellEyeException("provider_unavailable","Cross-published Linux helper is missing.",details:new{helperWindowsPath=_helperWindowsPath});
         string? sourceDirectory=Path.GetDirectoryName(_helperWindowsPath);if(String.IsNullOrEmpty(sourceDirectory))throw new ShellEyeException("provider_unavailable","Cross-published Linux helper directory is invalid.",details:new{helperWindowsPath=_helperWindowsPath});
         int slash=_helperLinuxPath.LastIndexOf('/');if(slash<=0)throw new ShellEyeException("provider_unavailable","Linux helper target path is invalid.",details:new{helperLinuxPath=_helperLinuxPath});
@@ -92,6 +96,49 @@ public sealed class LinuxWslProvider : IDisposable
         catch(Exception e){string err=CurrentStderr();ResetHelper();throw new ShellEyeException("provider_unavailable","Linux provider helper returned an invalid ready record.",details:new{ready,stderr=err},inner:e);}
     }
 
+    private sealed record AnchorState(int Pid,long StartTimeUtcTicks,string Executable,string Distro,string ProviderKey,string CreatedUtc);
+    private void EnsureProviderAnchor()
+    {
+        if(_anchor is{HasExited:false})return;
+        try{_anchor?.Dispose();}catch{} _anchor=null;
+        try
+        {
+            if(File.Exists(_anchorStatePath))
+            {
+                AnchorState? state=null;try{state=JsonSerializer.Deserialize<AnchorState>(File.ReadAllText(_anchorStatePath),JsonDefaults.Options);}catch{}
+                if(state is not null&&StringComparer.Ordinal.Equals(state.Distro,_distro)&&StringComparer.Ordinal.Equals(state.ProviderKey,_providerKey))
+                {
+                    try
+                    {
+                        var existing=Process.GetProcessById(state.Pid);
+                        string? existingExe=existing.MainModule?.FileName;
+                        long ticks=existing.StartTime.ToUniversalTime().Ticks;
+                        if(!existing.HasExited&&ticks==state.StartTimeUtcTicks&&existingExe is not null&&StringComparer.OrdinalIgnoreCase.Equals(Path.GetFullPath(existingExe),Path.GetFullPath(state.Executable))){_anchor=existing;return;}
+                        existing.Dispose();
+                    }
+                    catch{}
+                }
+                try{File.Delete(_anchorStatePath);}catch{}
+            }
+            string? dir=Path.GetDirectoryName(_anchorStatePath);if(!String.IsNullOrEmpty(dir))Directory.CreateDirectory(dir);
+            var psi=CreateWslStartInfo("/usr/bin/sleep",new[]{"infinity"});psi.RedirectStandardInput=false;psi.RedirectStandardOutput=false;psi.RedirectStandardError=false;
+            var anchor=Process.Start(psi)??throw new ShellEyeException("provider_unavailable","WSL provider lifetime anchor did not start.",details:new{distro=_distro});
+            if(anchor.WaitForExit(300)){int exit=anchor.ExitCode;anchor.Dispose();throw new ShellEyeException("provider_unavailable","WSL provider lifetime anchor exited during startup.",details:new{distro=_distro,exitCode=exit});}
+            string exe=anchor.MainModule?.FileName??throw new ShellEyeException("provider_unavailable","WSL provider lifetime anchor executable identity is unavailable.",details:new{distro=_distro,pid=anchor.Id});
+            long startTicks=anchor.StartTime.ToUniversalTime().Ticks;
+            _anchor=anchor;
+            var record=new AnchorState(anchor.Id,startTicks,Path.GetFullPath(exe),_distro,_providerKey,DateTimeOffset.UtcNow.ToString("O"));
+            string temp=_anchorStatePath+".tmp";File.WriteAllText(temp,JsonSerializer.Serialize(record,JsonDefaults.Options));File.Move(temp,_anchorStatePath,true);
+        }
+        catch(ShellEyeException){ResetAnchor();throw;}
+        catch(Exception e){ResetAnchor();throw new ShellEyeException("provider_unavailable","Failed to establish WSL provider lifetime anchor.",details:new{distro=_distro,anchorStatePath=_anchorStatePath},inner:e);}
+    }
+    private void ResetAnchor()
+    {
+        if(_anchor is not null){try{if(!_anchor.HasExited)_anchor.Kill(true);}catch{}try{_anchor.Dispose();}catch{}}_anchor=null;
+        try{if(File.Exists(_anchorStatePath))File.Delete(_anchorStatePath);}catch{}
+        try{if(File.Exists(_anchorStatePath+".tmp"))File.Delete(_anchorStatePath+".tmp");}catch{}
+    }
     private async Task RunWslCommandAsync(string executable,IEnumerable<string> args,CancellationToken ct)
     {
         var psi=CreateWslStartInfo(executable,args);psi.RedirectStandardOutput=true;psi.RedirectStandardError=true;
@@ -118,5 +165,5 @@ public sealed class LinuxWslProvider : IDisposable
     private string CurrentStderr(){lock(_stderr)return _stderr.ToString();}
     private static string NormalizeWslText(string text)=>text.Replace("\0","").Trim();
     private void ResetHelper(){try{_writer?.Dispose();}catch{}try{_reader?.Dispose();}catch{}if(_helper is not null){try{if(!_helper.HasExited)_helper.Kill(true);}catch{}try{_helper.Dispose();}catch{}}_helper=null;_writer=null;_reader=null;_providerEpoch=null;}
-    public void Dispose(){_gate.Wait();try{ResetHelper();}finally{_gate.Release();_gate.Dispose();}}
+    public void Dispose(){_gate.Wait();try{ResetHelper();ResetAnchor();}finally{_gate.Release();_gate.Dispose();}}
 }
