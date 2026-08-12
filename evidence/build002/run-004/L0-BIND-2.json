@@ -1,0 +1,43 @@
+{
+  "classification": "BUILD 002 RUN 004 POST-RESET L0 BIND",
+  "capturedUtc": "2026-08-12T16:39:20.9341454+00:00",
+  "implementationCommit": "6bb4806a64e27b82e7e664f6ad915364fe8d99b6",
+  "observerCommit": "cd7dd98f8ec8df910f41c89e083b855bf0cc3c4d",
+  "whoami": "stealtheyellc\\stealtheye",
+  "session": 1,
+  "kernelPid": 50920,
+  "kernelEpoch": "kernel_2",
+  "pipe": "shelleye-build002-run004-measured",
+  "database": "C:\\SHELLeye\\state\\build002-run004\\shelleye.db",
+  "worldId": "world_1",
+  "providerKey": "wsl:{aa957c59-794f-4ad3-ae28-9188cae51ee3}",
+  "worldEpoch": "linux_epoch_b01d7f688625a0c4a7a6f76d",
+  "providerEpoch": "linux_provider_d0a372ef9895413dadf8c91fcece15f7",
+  "os": "Ubuntu 24.04.4 LTS",
+  "kernel": "6.18.33.2-microsoft-standard-WSL2",
+  "machineId": "9bd442ff38984ccaadd4f6e3f55669f5",
+  "bootId": "30755c03-7afe-4407-ae78-5116e87be4d1",
+  "pidNamespace": "pid:[4026532221]",
+  "initStartTicks": 84,
+  "capabilities": {
+    "pidfd": true,
+    "statx": true,
+    "inotify": true,
+    "cgroupV2": true,
+    "systemd": true,
+    "exportableFileHandle": true,
+    "mountIdUnique": true
+  },
+  "rawL0Sha256": "AD7DBBF7019E5404835D50147F86768083540028461E8A9C00CD14B958F99253",
+  "freezeCheckSha256": "1C13738A34276C6EFE909E39FFD199B62C0C38D4B78EE40CCC7A8B4C19B8E6BE",
+  "freezeCheckWorldEpochMatch": true,
+  "freezeCheckBootIdMatch": true,
+  "anchor": {
+    "pid": 93592,
+    "startTimeUtcTicks": 639221495610722816,
+    "executable": "C:\\Program Files\\WSL\\wsl.exe",
+    "distro": "Ubuntu-24.04",
+    "providerKey": "wsl:{aa957c59-794f-4ad3-ae28-9188cae51ee3}",
+    "exactAtFreezeCheck": true
+  }
+}
