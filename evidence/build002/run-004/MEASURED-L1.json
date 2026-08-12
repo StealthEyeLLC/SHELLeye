@@ -1,0 +1,18 @@
+{
+  "classification": "MEASURED RUN 004 FINAL L1",
+  "freezeCommit": "05545238e7a23091e86ae72174a4c0d329a1cf6d",
+  "implementationCommit": "6bb4806a64e27b82e7e664f6ad915364fe8d99b6",
+  "owner": "stealtheyellc\\stealtheye",
+  "session": 1,
+  "pipe": "shelleye-build002-run004-final-measured",
+  "startedUtc": "2026-08-12T17:03:06.2962099+00:00",
+  "endedUtc": "2026-08-12T17:03:27.9872505+00:00",
+  "exitCode": 0,
+  "passed": true,
+  "iterations": 256,
+  "reuseObserved": 0,
+  "wrongRebound": 0,
+  "falseProcessRebounds": 0,
+  "kernelPidAfter": 115388,
+  "kernelEpochAfter": "kernel_1"
+}
