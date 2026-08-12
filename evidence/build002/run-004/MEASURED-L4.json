@@ -1,0 +1,18 @@
+{
+  "classification": "MEASURED RUN 004 FINAL L4",
+  "freezeCommit": "05545238e7a23091e86ae72174a4c0d329a1cf6d",
+  "implementationCommit": "6bb4806a64e27b82e7e664f6ad915364fe8d99b6",
+  "owner": "stealtheyellc\\stealtheye",
+  "session": 1,
+  "passed": true,
+  "windowsBootEpoch": "boot_1",
+  "linuxEpochBefore": "linux_epoch_e670dc03eafd2b924ea53c42",
+  "linuxEpochAfter": "linux_epoch_a4789dbf717453db9c20b8c8",
+  "processState": "destroyed",
+  "fileState": "destroyed",
+  "strongGapHandle": true,
+  "falseRebounds": 0,
+  "wrongObjectMutations": 0,
+  "kernelPidAfter": 27444,
+  "kernelEpochAfter": "kernel_2"
+}
