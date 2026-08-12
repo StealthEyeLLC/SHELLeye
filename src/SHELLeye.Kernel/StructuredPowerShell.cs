@@ -9,7 +9,7 @@ public sealed class StructuredPowerShell : IDisposable
     private readonly Runspace _runspace;private readonly SemaphoreSlim _gate=new(1,1);private readonly WorldContext _w;
     public StructuredPowerShell(WorldContext world)
     {
-        _w=world;var iss=InitialSessionState.CreateDefault2();_runspace=RunspaceFactory.CreateRunspace(iss);_runspace.Open();
+        _w=world;string bundledModules=Path.Combine(AppContext.BaseDirectory,"runtimes","win","lib","net10.0","Modules");if(Directory.Exists(bundledModules)){string? current=Environment.GetEnvironmentVariable("PSModulePath");if(current is null||!current.Split(Path.PathSeparator,StringSplitOptions.RemoveEmptyEntries).Contains(bundledModules,StringComparer.OrdinalIgnoreCase))Environment.SetEnvironmentVariable("PSModulePath",String.IsNullOrEmpty(current)?bundledModules:bundledModules+Path.PathSeparator+current);}var iss=InitialSessionState.CreateDefault2();_runspace=RunspaceFactory.CreateRunspace(iss);_runspace.Open();
     }
     public async Task<object> InvokeAsync(string command,Dictionary<string,object?> parameters,string[]? properties,CancellationToken ct)
     {
