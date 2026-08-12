@@ -570,3 +570,27 @@ INCONCLUSIVE — real Provider B measurement could not be completed
 ```
 
 The present locked/LocalSystem condition requires `INCONCLUSIVE` unless and until real owner-context Provider B measurement actually runs. Implementation or mocks alone cannot change that classification.
+
+## 18. Prospective acceptance-evidence binding amendment — 2026-08-12
+
+Status: **PROSPECTIVE / PRE-MEASUREMENT**.
+
+This amendment fixes implementation-era evidence names and one bounded stress count before any real Linux measured acceptance case has run. It does not change the Build 002 success criterion or weaken any gate above.
+
+Frozen repository evidence paths:
+
+- acceptance-candidate binding: `docs/13-BUILD-002-ACCEPTANCE-FREEZE.md`;
+- measured Build 002 result, created only after a measured campaign actually runs: `docs/14-BUILD-002-RESULTS.md`.
+
+Frozen acceptance harnesses:
+
+- `program-host/src/build002-acceptance.js` — one persistent Program Host connection; >=40 successful typed operations; >=12 successful Linux-provider operations;
+- `tests/acceptance/build002-linux-pid-reuse-stress.js` — exactly **256** real short-lived Linux process launch/wait iterations; reuse is best-effort, any observed reuse must not rebound;
+- `tests/acceptance/build002-recovery-prepare.js` + `tests/acceptance/build002-recovery-recover.js` — two-phase SHELLeye-kernel recovery gate;
+- `tests/acceptance/build002-distro-restart.js` — actual selected WSL distribution termination/restart boundary through the owner-context SHELLeye kernel.
+
+Frozen Linux helper publication path for acceptance preparation:
+
+`C:\SHELLeye\runtime\linux\app\SHELLeye.Platform.Linux`
+
+The helper binary hash is **not** frozen here because implementation is still being finalized. Its exact SHA-256 must be bound in `docs/13-BUILD-002-ACCEPTANCE-FREEZE.md` after the implementation commit is published and re-built from that commit.
